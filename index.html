@@ -1,0 +1,3663 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcards Tiếng Trung - Cloud Sync & AI Auto-Fill</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Pinyin-pro (Tự tạo Pinyin tức thì không cần mạng) -->
+  <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
+  <style>
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+
+    .transform-style-3d {
+      transform-style: preserve-3d;
+    }
+
+    .backface-hidden {
+      backface-visibility: hidden;
+    }
+
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col font-sans">
+
+  <!-- Màn hình Xác thực Đăng nhập / Đăng ký (Chặn trước khi vào màn hình chính) -->
+  <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5 border border-indigo-100 relative">
+      <!-- Nút chọn ngôn ngữ trên trang Đăng nhập -->
+      <div class="flex justify-end">
+        <div class="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-semibold">
+          <button type="button" data-lang-switch="vi" class="lang-switch-btn px-2 py-1 rounded-md transition">🇻🇳 Việt</button>
+          <button type="button" data-lang-switch="zh" class="lang-switch-btn px-2 py-1 rounded-md transition">🇨🇳 中文</button>
+          <button type="button" data-lang-switch="bi" class="lang-switch-btn px-2 py-1 rounded-md transition">🇻🇳/🇨🇳 Song ngữ</button>
+        </div>
+      </div>
+
+      <div class="text-center space-y-1.5">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 text-3xl shadow-sm mb-1">
+          🇨🇳
+        </div>
+        <h1 class="text-2xl font-bold text-slate-800">HSK Flashcards</h1>
+        <p id="i18nAuthSubtitle" class="text-xs text-slate-500">Đăng nhập để tải tiến trình học cá nhân của bạn • 登录以加载您的个人学习进度</p>
+      </div>
+
+      <!-- Thông báo lần đầu chưa có tài khoản nào trên DB -->
+      <div id="authFirstSetupBanner" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 space-y-1">
+        <div class="font-bold flex items-center gap-1.5 text-amber-900">
+          <i class="fa-solid fa-shield-halved text-amber-600"></i>
+          <span id="i18nFirstSetupTitle">Khởi tạo Tài khoản Chủ sở hữu (Owner) • 初始化所有者账户</span>
+        </div>
+        <p id="i18nFirstSetupDesc">Database hiện chưa có tài khoản nào. Hãy tạo tài khoản đầu tiên của bạn — toàn bộ thẻ và tiến trình học hiện có sẽ thuộc về tài khoản này.</p>
+      </div>
+
+      <!-- Chuyển tab Đăng nhập / Đăng ký -->
+      <div id="authTabSwitcher" class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
+        <button type="button" id="tabBtnLogin" class="py-2 rounded-lg bg-white text-indigo-600 shadow-sm transition">
+          <i class="fa-solid fa-right-to-bracket mr-1"></i> <span id="i18nTabLogin">Đăng nhập • 登录</span>
+        </button>
+        <button type="button" id="tabBtnRegister" class="py-2 rounded-lg text-slate-600 hover:bg-white/60 transition">
+          <i class="fa-solid fa-user-plus mr-1"></i> <span id="i18nTabRegister">Tạo tài khoản • 注册</span>
+        </button>
+      </div>
+
+      <!-- Form Đăng nhập / Đăng ký -->
+      <form id="authForm" class="space-y-3.5" onsubmit="return false;">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">
+            <i class="fa-solid fa-user text-indigo-500 mr-1"></i><span id="i18nLabelUsername">Tên đăng nhập (User) • 用户名:</span>
+          </label>
+          <input type="text" id="authUsername" autocomplete="username" required placeholder="Nhập tên user / 请输入用户名"
+            class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">
+            <i class="fa-solid fa-lock text-indigo-500 mr-1"></i><span id="i18nLabelPassword">Mật khẩu • 密码:</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="authPassword" autocomplete="current-password" required placeholder="Nhập mật khẩu / 请输入密码..."
+              class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            <button type="button" id="btnToggleShowAuthPwd" tabindex="-1"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="authConfirmPwdBox" class="hidden">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">
+            <i class="fa-solid fa-check-double text-indigo-500 mr-1"></i><span id="i18nLabelConfirmPwd">Nhập lại mật khẩu • 确认密码:</span>
+          </label>
+          <input type="password" id="authConfirmPassword" autocomplete="new-password" placeholder="Nhập lại mật khẩu / 请再次输入密码..."
+            class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-slate-600 pt-0.5">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="authRememberMe" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+            <span id="i18nRememberMe">Ghi nhớ đăng nhập trên thiết bị này • 记住登录状态</span>
+          </label>
+        </div>
+
+        <div id="authErrorMsg" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium"></div>
+
+        <button type="submit" id="btnSubmitAuth"
+          class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-to-bracket"></i> <span id="i18nBtnSubmitAuth">Đăng nhập vào học • 登录学习</span>
+        </button>
+      </form>
+
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-center text-[11px] text-slate-400">
+        <span><i class="fa-solid fa-shield-cat mr-1 text-emerald-500"></i><span id="i18nAuthSecurityNote">Bảo mật xác thực SHA-256 • SHA-256 加密安全认证</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header id="appHeader" class="hidden bg-indigo-600 text-white shadow-md">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-3">
+      <div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 class="text-2xl font-bold flex items-center gap-2">
+            <span>🇨🇳</span> HSK Flashcards
+          </h1>
+          <button id="btnOpenSettings"
+            class="text-xs px-2.5 py-1 rounded-full bg-indigo-700/80 hover:bg-indigo-800 border border-indigo-400/30 flex items-center gap-1.5 transition"
+            title="Cấu hình AI & Đồng bộ (Chỉ Chủ sở hữu / 仅所有者)">
+            <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span id="syncStatusText">Cục bộ</span>
+            <i id="settingsGearIcon" class="fa-solid fa-gear ml-0.5 text-indigo-200"></i>
+          </button>
+          <!-- Nút Tài khoản đang đăng nhập -->
+          <button id="btnOpenUserModal"
+            class="text-xs px-2.5 py-1 rounded-full bg-emerald-600/90 hover:bg-emerald-700 border border-emerald-400/40 flex items-center gap-1.5 transition"
+            title="Tài khoản & Tiến trình học cá nhân / 个人账户与进度">
+            <i class="fa-solid fa-user-check text-emerald-200"></i>
+            <span id="currentUserBadgeText" class="font-semibold">User</span>
+          </button>
+          <button id="btnQuickLogout"
+            class="text-xs px-2 py-1 rounded-full bg-indigo-700/70 hover:bg-rose-600 border border-indigo-400/30 text-indigo-100 hover:text-white transition"
+            title="Đăng xuất / 退出登录">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+          <!-- Bộ chuyển đổi ngôn ngữ giao diện Việt / Trung / Song ngữ -->
+          <div class="inline-flex items-center bg-indigo-800/70 p-0.5 rounded-full border border-indigo-400/30 text-[11px] font-semibold">
+            <button type="button" data-lang-switch="vi" class="lang-switch-btn px-2 py-0.5 rounded-full transition">🇻🇳 Việt</button>
+            <button type="button" data-lang-switch="zh" class="lang-switch-btn px-2 py-0.5 rounded-full transition">🇨🇳 中文</button>
+            <button type="button" data-lang-switch="bi" class="lang-switch-btn px-2 py-0.5 rounded-full transition">Song ngữ/双语</button>
+          </div>
+        </div>
+        <p id="i18nHeaderSubtitle" class="text-xs text-indigo-100 mt-1">Đồng bộ tiến trình học theo từng User & Tự động tạo Pinyin/Ngữ pháp bằng AI • 按用户同步学习进度 & AI智能解析</p>
+      </div>
+      <div class="flex items-center gap-2 flex-wrap">
+        <button id="btnStudyMode"
+          class="px-3 py-1.5 rounded-lg bg-white text-indigo-600 font-semibold text-sm shadow hover:bg-indigo-50 transition">
+          <i class="fa-solid fa-layer-group mr-1"></i> <span id="i18nNavStudy">Lật thẻ • 翻卡</span>
+        </button>
+        <button id="btnQuizMode"
+          class="px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold text-sm hover:bg-indigo-400 transition">
+          <i class="fa-solid fa-feather mr-1"></i> <span id="i18nNavQuiz">Kiểm tra • 测验</span>
+        </button>
+        <button id="btnListMode"
+          class="px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold text-sm hover:bg-indigo-400 transition">
+          <i class="fa-solid fa-list mr-1"></i> <span id="i18nNavList">Danh sách • 列表</span>
+        </button>
+        <button id="btnOpenBulkModal"
+          class="px-3 py-1.5 rounded-lg bg-amber-500 text-white font-semibold text-sm hover:bg-amber-400 shadow transition">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> <span id="i18nNavBulk">Import AI • 批量导入</span>
+        </button>
+        <button id="btnOpenAddModal"
+          class="px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-semibold text-sm hover:bg-emerald-400 shadow transition">
+          <i class="fa-solid fa-plus mr-1"></i> <span id="i18nNavAdd">Thêm câu • 添加</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="appMain" class="hidden max-w-4xl mx-auto px-4 py-6 flex-1 w-full">
+
+    <!-- Flashcard Mode View -->
+    <div id="viewFlashcards" class="space-y-5">
+      <!-- Thanh nhắc nhở Lặp lại ngắt quãng (SRS Banner) -->
+      <div id="srsBanner"
+        class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl p-3.5 flex flex-wrap justify-between items-center gap-3 shadow-sm">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center text-base shrink-0">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
+          <div>
+            <div class="text-xs sm:text-sm font-bold text-slate-800">
+              <span id="i18nSrsBannerTitle">Lặp lại ngắt quãng (SRS) • 间隔重复:</span>
+              <span id="srsDueCountText" class="text-rose-600">0 câu</span>
+              <span id="i18nSrsBannerSuffix">cần ôn tập hôm nay • 今日待复习</span>
+            </div>
+            <p id="i18nSrsBannerDesc" class="text-[11px] text-slate-500">Bao gồm câu chưa thuộc, câu trả lời sai khi kiểm tra hoặc câu đã đến hạn ôn lại để tránh quên.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnStudySrsNow"
+            class="text-xs px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm transition">
+            <i class="fa-solid fa-bolt mr-1"></i> <span id="i18nBtnStudySrsNow">Học lại ngay • 立即复习</span>
+          </button>
+          <button id="btnQuizSrsNow"
+            class="text-xs px-3 py-1.5 rounded-lg bg-white hover:bg-amber-100 text-amber-700 border border-amber-300 font-semibold transition">
+            <i class="fa-solid fa-clipboard-check mr-1"></i> <span id="i18nBtnQuizSrsNow">Kiểm tra câu cần ôn • 测验待复习</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Thanh công cụ Lọc Thư mục & Trạng thái -->
+      <div
+        class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <span id="i18nProgressLabel" class="text-sm font-semibold text-slate-600">Tiến độ • 进度:</span>
+          <span id="cardProgressText" class="text-sm font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded">1 / 40</span>
+          <span id="statsSummaryText" class="text-xs text-slate-500"></span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- Chọn thư mục -->
+          <div class="flex items-center gap-1">
+            <i class="fa-solid fa-folder-open text-amber-500 text-xs"></i>
+            <select id="studyFolderSelect"
+              class="text-xs border rounded-lg px-2 py-1.5 bg-white border-slate-300 font-medium text-slate-700">
+              <option value="all">Tất cả thư mục</option>
+            </select>
+            <button id="btnNewFolderQuick" title="Tạo thư mục bộ thẻ mới / 新建文件夹"
+              class="text-xs px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold transition">
+              <span id="i18nBtnNewFolderQuick">+ Thư mục • 文件夹</span>
+            </button>
+          </div>
+
+          <!-- Chọn bộ lọc trạng thái / SRS -->
+          <select id="filterSelect"
+            class="text-xs border rounded-lg px-2 py-1.5 bg-white border-slate-300 font-medium text-slate-700">
+            <option value="all" id="i18nFilterAll">Tất cả trạng thái • 全部状态</option>
+            <option value="srs_due" id="i18nFilterSrsDue">🔥 Cần ôn hôm nay (SRS) • 今日待复习</option>
+            <option value="new" id="i18nFilterNew">🌱 Mới chưa học • 未学新卡</option>
+            <option value="hard" id="i18nFilterHard">⚠️ Chưa nhớ / Hay sai • 未记住/易错</option>
+            <option value="learning" id="i18nFilterLearning">⏳ Đang học (Ôn sau) • 学习中</option>
+            <option value="mastered" id="i18nFilterMastered">✅ Đã thuộc (Dễ) • 已掌握</option>
+          </select>
+
+          <!-- Đổi chiều mặt thẻ (Trung -> Việt hoặc Việt -> Trung) -->
+          <button id="btnToggleDirection" title="Đổi chiều mặt trước / mặt sau của thẻ • 切换卡片正反面方向"
+            class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold transition flex items-center gap-1">
+            <i class="fa-solid fa-right-left"></i> <span id="directionLabel">🇨🇳 ➔ 🇻🇳</span>
+          </button>
+
+          <!-- Làm mờ / Hiện rõ Pinyin -->
+          <button id="btnToggleBlurPinyin" title="Làm mờ hoặc hiện rõ phiên âm Pinyin • 模糊/清晰显示拼音"
+            class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200 font-semibold transition flex items-center gap-1">
+            <i id="blurPinyinIcon" class="fa-solid fa-eye"></i> <span id="blurPinyinLabel">Pinyin: Rõ</span>
+          </button>
+
+          <!-- Bật/tắt tự động phát âm mặt tiếng Trung -->
+          <button id="btnToggleAutoSpeak" title="Tự động phát âm khi ở mặt Tiếng Trung • 中文面自动发音"
+            class="text-xs px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 font-semibold transition flex items-center gap-1">
+            <i class="fa-solid fa-volume-high"></i> <span id="autoSpeakLabel">Tự đọc: BẬT</span>
+          </button>
+
+          <button id="btnReloadCloud" title="Tải lại từ Cloud / 从云端重新加载"
+            class="text-slate-500 hover:text-indigo-600 p-1.5 text-sm">
+            <i class="fa-solid fa-rotate"></i>
+          </button>
+          <button id="btnSpeak" title="Đọc lại câu này / 朗读此句" class="text-slate-600 hover:text-indigo-600 p-1.5 text-lg">
+            <i class="fa-solid fa-circle-play"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Flashcard Interactive Area -->
+      <div class="flex justify-center items-center">
+        <div id="cardContainer" class="w-full max-w-xl h-80 perspective-1000 cursor-pointer select-none">
+          <div id="cardInner" class="relative w-full h-full transition-transform duration-500 transform-style-3d">
+
+            <!-- Mặt Trước -->
+            <div
+              class="absolute w-full h-full bg-white rounded-2xl shadow-lg border border-slate-200 p-6 flex flex-col justify-between backface-hidden">
+              <div class="flex justify-between items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-1.5">
+                  <span id="cardFrontSideBadge"
+                    class="text-xs font-semibold uppercase tracking-wider text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">
+                    Mặt Trước (Tiếng Trung)
+                  </span>
+                  <span id="cardFolderBadge"
+                    class="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded-full">
+                    <i class="fa-solid fa-folder text-amber-400 mr-1"></i>Mặc định
+                  </span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span id="srsNextReviewBadge"
+                    class="text-[11px] px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-500"></span>
+                  <span id="levelBadge" class="text-xs px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-600">Mới học</span>
+                </div>
+              </div>
+              <div class="text-center my-auto space-y-3">
+                <h2 id="cardHanzi" class="text-2xl sm:text-3xl font-bold text-slate-800 leading-snug tracking-wide">
+                </h2>
+                <p id="cardPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="text-base sm:text-lg text-indigo-600 font-mono tracking-wide transition duration-200"></p>
+              </div>
+              <div class="text-center">
+                <span id="cardFrontHintText" class="text-xs text-slate-400 italic">
+                  <i class="fa-solid fa-hand-pointer mr-1"></i> Bấm để lật xem nghĩa & cấu trúc ngữ pháp
+                </span>
+              </div>
+            </div>
+
+            <!-- Mặt Sau -->
+            <div
+              class="absolute w-full h-full bg-indigo-900 text-white rounded-2xl shadow-lg p-6 flex flex-col justify-between backface-hidden rotate-y-180">
+              <div class="flex justify-between items-center">
+                <span id="cardBackSideBadge"
+                  class="text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-800/60 px-2.5 py-1 rounded-full">
+                </span>
+                <span id="i18nFlipBackHint" class="text-xs text-indigo-300">Bấm để lật lại • 点击翻回</span>
+              </div>
+              <div class="text-center my-auto space-y-2.5 overflow-y-auto max-h-48 px-1">
+                <p id="cardMeaning" class="text-xl sm:text-2xl font-bold text-emerald-300"></p>
+                <p id="cardBackPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="hidden text-sm sm:text-base text-amber-200 font-mono tracking-wide transition duration-200"></p>
+                <div id="cardGrammar"
+                  class="text-xs sm:text-sm text-indigo-100 bg-indigo-800/40 p-3 rounded-lg border border-indigo-700/50 text-left">
+                </div>
+              </div>
+              <div id="i18nCardBackFooter" class="text-center text-xs text-indigo-300">
+                Đánh giá bên dưới để lên lịch Lặp lại ngắt quãng (SRS) • 请在下方评估记忆程度 👇
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Spaced Repetition Buttons -->
+      <div class="flex flex-wrap justify-center items-center gap-3 max-w-xl mx-auto">
+        <button id="btnPrev"
+          class="px-4 py-2.5 rounded-lg bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
+          <i class="fa-solid fa-arrow-left"></i>
+        </button>
+        <button id="btnHard"
+          class="flex-1 py-2 px-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-semibold hover:bg-rose-100 transition text-sm">
+          <div><i class="fa-solid fa-rotate-left mr-1"></i> <span id="i18nBtnHardLabel">Chưa nhớ • 没记住</span></div>
+          <div id="i18nBtnHardSubtext" class="text-[10px] font-normal text-rose-500">Ôn lại ngay hôm nay • 今日重温</div>
+        </button>
+        <button id="btnGood"
+          class="flex-1 py-2 px-3 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-semibold hover:bg-amber-100 transition text-sm">
+          <div><i class="fa-solid fa-clock mr-1"></i> <span id="i18nBtnGoodLabel">Bình thường • 一般</span></div>
+          <div id="btnGoodSubtext" class="text-[10px] font-normal text-amber-600">Ôn sau 1-3 ngày</div>
+        </button>
+        <button id="btnEasy"
+          class="flex-1 py-2 px-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold hover:bg-emerald-100 transition text-sm">
+          <div><i class="fa-solid fa-check mr-1"></i> <span id="i18nBtnEasyLabel">Đã nhớ (Dễ) • 已记住</span></div>
+          <div id="btnEasySubtext" class="text-[10px] font-normal text-emerald-600">Ôn sau 3-7+ ngày</div>
+        </button>
+        <button id="btnNext"
+          class="px-4 py-2.5 rounded-lg bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quiz Mode View (Luyện tập đa chế độ + Chọn thư mục + SRS) -->
+    <div id="viewQuiz" class="hidden space-y-6 max-w-2xl mx-auto">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3 border-slate-100">
+          <h3 class="font-bold text-lg text-slate-800">
+            <i class="fa-solid fa-clipboard-question text-indigo-600 mr-2"></i> <span id="i18nQuizHeaderTitle">Luyện tập & Kiểm tra • 练习与测验</span>
+          </h3>
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- Lọc nguồn câu hỏi kiểm tra (Tất cả vs Cần ôn SRS) -->
+            <select id="quizSourceFilter"
+              class="text-xs border border-slate-300 rounded-lg px-2.5 py-1 bg-white text-slate-700 font-medium">
+              <option value="all" id="i18nQuizSrcAll">Tất cả câu trong thư mục • 文件夹内全部</option>
+              <option value="srs_priority" id="i18nQuizSrcPriority">🔥 Ưu tiên câu Cần ôn / Hay sai • 优先待复习/易错</option>
+              <option value="srs_only" id="i18nQuizSrcOnly">⚠️ Chỉ câu Cần ôn hôm nay (SRS) • 仅今日待复习</option>
+            </select>
+            <select id="quizCountSelect"
+              class="text-xs border border-slate-300 rounded-lg px-2 py-1 bg-white text-slate-700 font-medium">
+              <option value="5">5 câu / 题</option>
+              <option value="10">10 câu / 题</option>
+              <option value="20">20 câu / 题</option>
+              <option value="50">50 câu / 题</option>
+            </select>
+            <span id="quizScoreBadge"
+              class="text-xs font-semibold px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-full">
+              Câu 1 / 5
+            </span>
+          </div>
+        </div>
+
+        <!-- Chọn thư mục bộ thẻ để kiểm tra (Chọn 1, nhiều hoặc tất cả) -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-slate-600">
+              <i class="fa-solid fa-folder-tree text-amber-500 mr-1"></i> <span id="i18nQuizSelectFolderLabel">Chọn thư mục bộ thẻ muốn kiểm tra • 选择测验文件夹:</span>
+            </span>
+            <button type="button" id="btnQuizSelectAllFolders"
+              class="text-[11px] text-indigo-600 hover:underline font-semibold">
+              Chọn tất cả • 全选
+            </button>
+          </div>
+          <div id="quizFolderChips" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Bộ chọn chế độ kiểm tra -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 bg-slate-100 p-1.5 rounded-xl text-xs font-semibold">
+          <button type="button" data-quiz-mode="zh_to_vi"
+            class="quiz-mode-btn py-2 px-2 rounded-lg bg-white text-indigo-600 shadow-sm transition text-center">
+            🇨🇳 ➔ 🇻🇳<br><span id="i18nQModeZhVi" class="text-[11px] font-medium">Trung ➔ Việt • 中译越</span>
+          </button>
+          <button type="button" data-quiz-mode="vi_to_zh"
+            class="quiz-mode-btn py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center">
+            🇻🇳 ➔ 🇨🇳<br><span id="i18nQModeViZh" class="text-[11px] font-medium">Việt ➔ Trung • 越译中</span>
+          </button>
+          <button type="button" data-quiz-mode="listen_choice"
+            class="quiz-mode-btn py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center">
+            🎧 Chọn<br><span id="i18nQModeListenChoice" class="text-[11px] font-medium">Nghe ➔ Chọn • 听音选义</span>
+          </button>
+          <button type="button" data-quiz-mode="listen_type"
+            class="quiz-mode-btn py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center">
+            ✍️ Nghe dịch<br><span id="i18nQModeListenType" class="text-[11px] font-medium">Nghe ➔ Gõ • 听音输入</span>
+          </button>
+          <button type="button" data-quiz-mode="mixed"
+            class="quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center">
+            🎲 Trộn<br><span id="i18nQModeMixed" class="text-[11px] font-medium">Ngẫu nhiên • 随机</span>
+          </button>
+        </div>
+
+        <p id="quizQuestion" class="text-base sm:text-lg font-semibold text-slate-800">
+          Chọn nghĩa đúng của câu tiếng Trung sau:
+        </p>
+
+        <!-- Khung đề bài -->
+        <div id="quizPromptBox" class="p-5 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-2">
+          <!-- Hiển thị văn bản (Chữ Hán hoặc Tiếng Việt) -->
+          <div id="quizTextPrompt" class="space-y-1">
+            <div id="quizTargetHanzi" class="text-2xl font-bold text-indigo-700"></div>
+            <div id="quizTargetPinyin" class="text-sm font-mono text-slate-500"></div>
+          </div>
+
+          <!-- Điều khiển âm thanh cho chế độ Nghe -->
+          <div id="quizAudioPrompt" class="hidden py-2 space-y-3">
+            <div class="flex justify-center items-center gap-3">
+              <button type="button" id="btnQuizPlayNormal"
+                class="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md transition flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-volume-high text-lg"></i> <span id="i18nBtnPlayNormal">Nghe câu tiếng Trung • 播放中文句子</span>
+              </button>
+              <button type="button" id="btnQuizPlaySlow"
+                class="px-3.5 py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium shadow-sm transition flex items-center gap-1.5 text-xs"
+                title="Nghe tốc độ chậm / 慢速播放">
+                <i class="fa-solid fa-turtle text-indigo-600"></i> <span id="i18nBtnPlaySlow">Nghe chậm • 慢速</span>
+              </button>
+            </div>
+            <p id="quizListenHint" class="text-xs text-slate-400 italic">Bấm nút loa để nghe lại (Chữ Hán sẽ hiện sau khi bạn trả lời) • 点击喇叭重听（答题后显示汉字）</p>
+            <div id="quizListeningReveal" class="hidden pt-2 border-t border-slate-200/80 space-y-1">
+              <div id="quizRevealHanzi" class="text-xl font-bold text-indigo-700"></div>
+              <div id="quizRevealPinyin" class="text-xs font-mono text-slate-500"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Khung chọn 4 đáp án (Dùng cho Trung->Việt, Việt->Trung, Nghe->Chọn) -->
+        <div id="quizOptions" class="grid grid-cols-1 gap-2.5 pt-1"></div>
+
+        <!-- Khung nhập tay tiếng Việt (Dùng cho chế độ Nghe -> Gõ tiếng Việt) -->
+        <div id="quizTypingBox" class="hidden space-y-3 pt-1">
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="quizTypingInput"
+              placeholder="Nhập nghĩa tiếng Việt bạn nghe được (chấp nhận từ đồng nghĩa)... / 输入您听到的越南语意思..."
+              class="flex-1 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            <button type="button" id="btnSubmitTyping"
+              class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow transition shrink-0 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-check"></i> <span id="i18nBtnSubmitTyping">Kiểm tra • 提交</span>
+            </button>
+          </div>
+          <p class="text-xs text-slate-400">
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-500 mr-1"></i><span id="i18nTypingSynonymHint">Hệ thống tự động chấp nhận các từ đồng nghĩa và cách diễn đạt tương đương • 系统支持同义词与相近表达评判。</span>
+          </p>
+        </div>
+
+        <div id="quizFeedback" class="hidden p-3.5 rounded-xl text-sm font-medium"></div>
+        <div class="flex justify-end pt-2">
+          <button id="btnNextQuiz"
+            class="hidden px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition">
+            <span id="i18nBtnNextQuiz">Câu tiếp theo • 下一题</span> <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+          <button id="btnRestartQuiz"
+            class="hidden px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition">
+            <span id="i18nBtnRestartQuiz">Làm lại lượt kiểm tra mới • 重新开始测验</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- List Mode View -->
+    <div id="viewList" class="hidden space-y-4">
+      <div
+        class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
+          <h3 id="i18nListHeaderTitle" class="font-bold text-slate-700">Danh sách toàn bộ thẻ câu • 全部卡片列表</h3>
+          <span id="totalCardCount"
+            class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full"></span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <select id="listFolderSelect"
+            class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 font-medium">
+            <option value="all">📁 Tất cả thư mục</option>
+          </select>
+          <input type="text" id="searchListInput" placeholder="Tìm chữ Hán, Pinyin, nghĩa... / 搜索..."
+            class="text-xs border border-slate-300 rounded-lg px-3 py-1.5 w-48 focus:ring-2 focus:ring-indigo-500 outline-none">
+          <input type="file" id="inputImportJson" accept=".json,application/json" class="hidden">
+          <button id="btnImportJson"
+            class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold transition">
+            <i class="fa-solid fa-file-import mr-1"></i> <span id="i18nBtnImportJson">Nhập JSON • 导入</span>
+          </button>
+          <button id="btnExportJson"
+            class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition">
+            <i class="fa-solid fa-download mr-1"></i> <span id="i18nBtnExportJson">Xuất JSON • 导出</span>
+          </button>
+        </div>
+      </div>
+      <div id="allCardsTable"
+        class="bg-white rounded-xl shadow-sm border border-slate-200 divide-y divide-slate-100 overflow-hidden"></div>
+    </div>
+
+  </main>
+
+  <!-- Modal 1: Thêm 1 Câu Mới (Có chọn/tạo Thư mục & Tự điền bằng AI) -->
+  <div id="modalAddCard"
+    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-lg font-bold text-slate-800">
+          <i class="fa-solid fa-plus-circle text-emerald-500 mr-2"></i><span id="i18nModalAddTitle">Thêm câu học mới • 添加新句子</span>
+        </h3>
+        <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-3">
+        <!-- Chọn hoặc Tạo thư mục mới -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">
+            <i class="fa-solid fa-folder text-amber-500 mr-1"></i><span id="i18nModalAddFolderLabel">Thư mục bộ thẻ • 所属文件夹:</span>
+          </label>
+          <div class="flex gap-2">
+            <select id="inputCardFolderSelect"
+              class="flex-1 border rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"></select>
+            <button type="button" id="btnCreateFolderInSingle"
+              class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold shrink-0 transition">
+              + Thư mục mới • 新建
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label id="i18nModalAddHzLabel" class="block text-xs font-semibold text-slate-600">Chữ Hán (Chỉ cần nhập mục này) • 汉字:</label>
+            <button type="button" id="btnAutoFillSingle"
+              class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-md font-semibold shadow-sm transition flex items-center gap-1">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="i18nBtnAutoFillSingle">Tự động điền AI • AI自动填充</span>
+            </button>
+          </div>
+          <input type="text" id="inputHz" placeholder="Ví dụ / 例如: 我非常喜欢学习汉语。"
+            class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div>
+          <label id="i18nModalAddPyLabel" class="block text-xs font-semibold text-slate-600 mb-1">Pinyin (Tự động tạo khi gõ chữ Hán) • 拼音:</label>
+          <input type="text" id="inputPy" placeholder="Tự động điền / 自动生成..."
+            class="w-full border rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div>
+          <label id="i18nModalAddViLabel" class="block text-xs font-semibold text-slate-600 mb-1">Nghĩa tiếng Việt • 越南语释义:</label>
+          <input type="text" id="inputVi" placeholder="Bấm 'Tự động điền' hoặc tự nhập... / 点击AI填充或手动输入"
+            class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div>
+          <label id="i18nModalAddGrammarLabel" class="block text-xs font-semibold text-slate-600 mb-1">Giải thích từ vựng / Ngữ pháp • 词汇与语法解析:</label>
+          <textarea id="inputGrammar" rows="3"
+            placeholder="Bấm 'Tự động điền' để AI phân tích từ vựng & cấu trúc câu... / 点击AI填充自动解析词汇与语法"
+            class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btnCancelAdd"
+          class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200">Hủy • 取消</button>
+        <button id="btnSaveCard"
+          class="px-5 py-2 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 shadow">Lưu thẻ mới • 保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Import Hàng Loạt (Có chọn/tạo Thư mục & Chỉ cần dán câu tiếng Trung) -->
+  <div id="modalBulkImport"
+    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <h3 class="text-lg font-bold text-slate-800">
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-500 mr-2"></i><span id="i18nModalBulkTitle">Import nhanh bằng AI • AI批量导入中文句子</span>
+          </h3>
+          <p id="i18nModalBulkSubtitle" class="text-xs text-slate-500 mt-0.5">Mỗi dòng 1 câu tiếng Trung. Hệ thống tự động tạo Pinyin, dịch nghĩa tiếng Việt và phân tích ngữ pháp.</p>
+        </div>
+        <button id="btnCloseBulkModal" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-3 overflow-y-auto flex-1 pr-1">
+        <!-- Chọn hoặc Tạo thư mục cho loạt thẻ import -->
+        <div
+          class="bg-amber-50/60 border border-amber-200/70 p-3 rounded-xl flex flex-wrap items-center justify-between gap-2">
+          <label class="text-xs font-bold text-slate-700">
+            <i class="fa-solid fa-folder-plus text-amber-500 mr-1"></i><span id="i18nModalBulkFolderLabel">Lưu các câu này vào thư mục • 保存至文件夹:</span>
+          </label>
+          <div class="flex items-center gap-2 flex-1 sm:max-w-sm">
+            <select id="bulkFolderSelect"
+              class="flex-1 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold bg-white outline-none"></select>
+            <button type="button" id="btnCreateFolderInBulk"
+              class="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-100 text-amber-700 border border-amber-300 text-xs font-semibold shrink-0 transition">
+              + Thư mục mới • 新建
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label id="i18nModalBulkInputLabel" class="block text-xs font-semibold text-slate-700 mb-1">Danh sách câu tiếng Trung (mỗi câu 1 dòng) • 中文句子列表（每行一句）:</label>
+          <textarea id="bulkInputHz" rows="5"
+            placeholder="Ví dụ / 例如:&#10;今天天气非常好，我们去公园散步吧。&#10;虽然汉语有点儿难，但是很有意思。&#10;你周末一般喜欢做什么？"
+            class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none font-sans"></textarea>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <span id="bulkStatusText" class="text-xs text-slate-500 italic">Mẹo: Dán 5 - 20 câu mỗi lần để AI phân tích nhanh và chuẩn nhất.</span>
+          <button id="btnAnalyzeBulk"
+            class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm shadow transition flex items-center gap-2">
+            <i class="fa-solid fa-bolt"></i> <span id="i18nBtnAnalyzeBulk">Phân tích & Tự điền tất cả • AI解析全部</span>
+          </button>
+        </div>
+
+        <!-- Bảng xem trước kết quả -->
+        <div id="bulkPreviewContainer" class="hidden space-y-2 pt-2">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Xem trước kết quả / 预览结果 (<span
+                id="bulkPreviewCount">0</span>):</h4>
+          </div>
+          <div id="bulkPreviewList"
+            class="border rounded-xl divide-y divide-slate-100 max-h-60 overflow-y-auto bg-slate-50"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t">
+        <button id="btnCancelBulk"
+          class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200">Đóng • 关闭</button>
+        <button id="btnSaveBulk" disabled
+          class="px-5 py-2 rounded-lg bg-emerald-600 disabled:bg-slate-300 text-white font-semibold text-sm hover:bg-emerald-700 shadow transition">
+          <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Lưu tất cả vào bộ thẻ • 保存全部
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Cấu hình AI & Đồng bộ Cloud (Chỉ dành riêng cho Owner, không lộ thông tin DB) -->
+  <div id="modalSettings"
+    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-lg font-bold text-slate-800">
+          <i class="fa-solid fa-sliders text-indigo-600 mr-2"></i>Cấu hình AI & Đồng bộ Cloud (Owner) • AI与云同步设置
+        </h3>
+        <button id="btnCloseSettings" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-sm">
+        <!-- Phần 1: Đồng bộ dữ liệu Cloud -->
+        <div class="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-center justify-between gap-3">
+          <div>
+            <h4 class="font-bold text-indigo-900 text-xs sm:text-sm">
+              <i class="fa-solid fa-cloud-arrow-up text-indigo-600 mr-1"></i> Đồng bộ toàn bộ thẻ hiện tại lên Cloud • 同步本地卡片至云端
+            </h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Đẩy tất cả thẻ và thư mục đang có trên thiết bị lên Database.</p>
+          </div>
+          <button id="btnPushLocalToCloud"
+            class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg font-semibold transition shrink-0">
+            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Đồng bộ ngay • 立即同步
+          </button>
+        </div>
+
+        <!-- Phần 2: OpenRouter AI (Không hiển thị lại key cũ ra DOM) -->
+        <div class="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl space-y-2.5">
+          <h4 class="font-bold text-amber-900 flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles text-amber-600"></i> OpenRouter AI (Dịch nghĩa & Phân tích ngữ pháp • AI翻译与语法解析)
+          </h4>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Key được mã hóa theo mật khẩu Chủ sở hữu và không bao giờ hiển thị lại trên giao diện web. Chỉ nhập vào ô dưới đây khi bạn muốn <b>cập nhật key mới</b>.
+          </p>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">OpenRouter API Key:</label>
+            <input type="password" id="cfgOpenRouterKey" autocomplete="off" placeholder="Nhập key mới (sk-or-v1-...) hoặc để trống nếu giữ nguyên"
+              class="w-full border rounded-lg p-2 text-xs font-mono bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Model AI ưu tiên trên OpenRouter • 优先 AI 模型:</label>
+            <input type="text" id="cfgOpenRouterModel" list="openRouterModelsList" placeholder="deepseek/deepseek-chat"
+              class="w-full border rounded-lg p-2 text-xs font-mono bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+            <datalist id="openRouterModelsList">
+              <option value="deepseek/deepseek-chat">DeepSeek V3 (Rất giỏi tiếng Trung & Ngữ pháp HSK)</option>
+              <option value="google/gemini-2.0-flash-001">Google Gemini 2.0 Flash (Tốc độ rất nhanh)</option>
+              <option value="openai/gpt-4o-mini">OpenAI GPT-4o Mini (Chuẩn xác, ổn định)</option>
+              <option value="qwen/qwen-2.5-72b-instruct">Qwen 2.5 72B (Model Alibaba chuyên tiếng Trung)</option>
+              <option value="openrouter/free">OpenRouter Free (Tự động chọn model miễn phí)</option>
+              <option value="openrouter/auto">OpenRouter Auto (Tự động chọn model tối ưu)</option>
+            </datalist>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button id="btnCancelSettings"
+          class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200">Đóng • 关闭</button>
+        <button id="btnSaveSettings"
+          class="px-5 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 shadow">Lưu cấu hình • 保存设置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Quản lý Tài khoản & Tiến trình học theo User -->
+  <div id="modalUserAccount"
+    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-user-shield text-emerald-600"></i>
+          <span id="i18nUserModalTitle">Tài khoản & Tiến trình học cá nhân • 个人账户与学习进度</span>
+        </h3>
+        <button id="btnCloseUserModal" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+
+      <!-- Thông tin User hiện tại -->
+      <div class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex items-center justify-between gap-3">
+        <div class="space-y-0.5">
+          <div id="i18nLoggedInAsLabel" class="text-xs text-slate-500">Đang đăng nhập với tài khoản • 当前登录账户:</div>
+          <div class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <span id="userModalDisplayName">---</span>
+            <span id="userModalRoleBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-600 text-white font-semibold">Chủ sở hữu</span>
+          </div>
+          <div id="userModalStatsText" class="text-xs text-emerald-700 font-medium pt-0.5"></div>
+        </div>
+        <button type="button" id="btnLogoutInModal"
+          class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition shrink-0">
+          <i class="fa-solid fa-right-from-bracket mr-1"></i> <span id="i18nBtnLogoutModal">Đăng xuất • 退出</span>
+        </button>
+      </div>
+
+      <!-- Đổi mật khẩu -->
+      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600">
+          <i class="fa-solid fa-key text-indigo-500 mr-1"></i> <span id="i18nChangePwdHeader">Đổi mật khẩu của bạn • 修改密码</span>
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input type="password" id="inputNewPassword" placeholder="Mật khẩu mới / 新密码..."
+            class="border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+          <input type="password" id="inputConfirmNewPassword" placeholder="Nhập lại mật khẩu mới / 确认新密码..."
+            class="border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div class="flex justify-end">
+          <button type="button" id="btnChangePassword"
+            class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition">
+            Cập nhật mật khẩu • 更新密码
+          </button>
+        </div>
+      </div>
+
+      <!-- Quản trị viên (Chỉ hiện với Owner) -->
+      <div id="ownerAdminSection" class="hidden p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-amber-900">
+            <i class="fa-solid fa-users-gear text-amber-600 mr-1"></i> Quản lý User (Owner) • 用户管理
+          </h4>
+          <label class="flex items-center gap-1.5 text-xs font-semibold text-amber-900 cursor-pointer select-none">
+            <input type="checkbox" id="chkAllowPublicRegister" checked class="rounded text-amber-600 focus:ring-amber-500">
+            <span>Cho phép khách tự đăng ký • 允许公开注册</span>
+          </label>
+        </div>
+        <p class="text-[11px] text-slate-600 leading-relaxed">
+          Mỗi user có tiến trình học (Đã thuộc, Chưa nhớ, lịch ôn SRS) hoàn toàn độc lập, không ghi đè lên tiến trình của bạn và không có quyền xóa thẻ của bạn.
+        </p>
+
+        <!-- Tạo nhanh user mới bởi Owner -->
+        <div class="flex flex-col sm:flex-row gap-2 pt-1">
+          <input type="text" id="adminNewUsername" placeholder="Tên user mới / 新用户名..."
+            class="flex-1 border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs bg-white outline-none">
+          <input type="password" id="adminNewPassword" placeholder="Mật khẩu / 密码..."
+            class="flex-1 border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs bg-white outline-none">
+          <button type="button" id="btnAdminCreateUser"
+            class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shrink-0 transition">
+            + Thêm User • 添加
+          </button>
+        </div>
+
+        <!-- Danh sách các user trong DB -->
+        <div id="adminUserListContainer" class="divide-y divide-amber-200/60 bg-white rounded-lg border border-amber-200 max-h-40 overflow-y-auto text-xs">
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t">
+        <button type="button" id="btnCloseUserModalBottom"
+          class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200">Đóng • 关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // =========================================================================
+    // HỆ THỐNG ĐA NGÔN NGỮ GIAO DIỆN: TIẾNG VIỆT (vi) | TIẾNG TRUNG (zh) | SONG NGỮ (bi)
+    // =========================================================================
+    let uiLang = localStorage.getItem('cfg_ui_lang') || 'bi'; // 'vi' | 'zh' | 'bi'
+
+    function t(viStr, zhStr) {
+      if (uiLang === 'vi') return viStr;
+      if (uiLang === 'zh') return zhStr;
+      return `${viStr} • ${zhStr}`;
+    }
+
+    // Dữ liệu 43 câu mặc định ban đầu
+    const initialData = [
+      { hz: "你平常什么时候有空呢？", py: "Nǐ píngcháng shénme shíhou yǒukòng ne?", vi: "Bình thường khi nào bạn rảnh rỗi thế?", grammar: "• 平常 (píngcháng): bình thường | 什么时候: khi nào | 有空: rảnh rỗi." },
+      { hz: "在家的时候，我喜欢听播客什么的。", py: "Zài jiā de shíhou, wǒ xǐhuan tīng bōkè shénme de.", vi: "Lúc ở nhà, tôi thích nghe podcast này nọ/chẳng hạn.", grammar: "• ...的时候: khi/lúc... | 什么的: vân vân, các thứ tương tự." },
+      { hz: "你看电影、电视剧什么的吗？", py: "Nǐ kàn diànyǐng, diànshìjù shénme de ma?", vi: "Bạn có xem phim điện ảnh, phim truyền hình này nọ không?", grammar: "• 电影: phim chiếu rạp | 电视剧: phim bộ truyền hình." },
+      { hz: "我喜欢运动，我经常跑步。", py: "Wǒ xǐhuan yùndòng, wǒ jīngcháng pǎobù.", vi: "Tôi thích vận động, tôi thường xuyên chạy bộ.", grammar: "• 运动: vận động | 经常: thường xuyên." },
+      { hz: "他可能不喜欢看电视剧什么的。", py: "Tā kěnéng bù xǐhuan kàn diànshìjù shénme de.", vi: "Anh ấy có thể không thích xem phim truyền hình này nọ.", grammar: "• 可能: có thể, có lẽ." },
+      { hz: "我觉得游泳比跑步好。", py: "Wǒ juéde yóuyǒng bǐ pǎobù hǎo.", vi: "Tôi cảm thấy bơi lội tốt hơn chạy bộ.", grammar: "• 觉得: cảm thấy | A 比 B + Tính từ (so sánh hơn)." },
+      { hz: "我平常喜欢吃米饭、面条儿什么的。", py: "Wǒ píngcháng xǐhuan chī mǐfàn, miàntiáor shénme de.", vi: "Bình thường tôi thích ăn cơm, mì sợi này nọ.", grammar: "• 米饭: cơm | 面条儿: mì sợi." },
+      { hz: "有空儿的时候，我经常和朋友跳舞。", py: "Yǒukòngr de shíhou, wǒ jīngcháng hé péngyou tiàowǔ.", vi: "Lúc có thời gian rảnh, tôi thường nhảy múa cùng bạn bè.", grammar: "• 和...一起: cùng với | 跳舞: nhảy múa." },
+      { hz: "我的习惯是起床后先去跑步。", py: "Wǒ de xíguàn shì qǐchuáng hòu xiān qù pǎobù.", vi: "Thói quen của tôi là thức dậy xong thì đi chạy bộ trước.", grammar: "• 习惯: thói quen | 起床后: sau khi thức dậy." },
+      { hz: "画画儿的时候，他非常安静。", py: "Huà huàr de shíhou, tā fēicháng ānjìng.", vi: "Lúc vẽ tranh, anh ấy vô cùng yên tĩnh.", grammar: "• 画画儿: vẽ tranh | 安静: yên tĩnh." },
+      { hz: "画树的时候，我的习惯是先画树叶。", py: "Huà shù de shíhou, wǒ de xíguàn shì xiān huà shùyè.", vi: "Khi vẽ cây, thói quen của tôi là vẽ lá cây trước.", grammar: "• 树: cây | 树叶: lá cây." },
+      { hz: "我经常读书，比如小说。", py: "Wǒ jīngcháng dúshū, bǐrú xiǎoshuō.", vi: "Tôi thường đọc sách, ví dụ như tiểu thuyết.", grammar: "• 读书: đọc sách | 比如: ví dụ như | 小说: tiểu thuyết." },
+      { hz: "我喜欢读书，比如小说。", py: "Wǒ xǐhuan dúshū, bǐrú xiǎoshuō.", vi: "Tôi thích đọc sách, ví dụ như tiểu thuyết.", grammar: "• Dùng 比如 để đưa ví dụ cụ thể." },
+      { hz: "你想不想和我一起去散步？", py: "Nǐ xiǎng bu xiǎng hé wǒ yìqǐ qù sànbù?", vi: "Bạn có muốn cùng tôi đi dạo bộ không?", grammar: "• 想不想: câu hỏi chính phản | 散步: đi dạo." },
+      { hz: "休息的时候，你听播客什么的吗？", py: "Xiūxi de shíhou, nǐ tīng bōkè shénme de ma?", vi: "Khi nghỉ ngơi, bạn có nghe podcast này nọ không?", grammar: "• 休息: nghỉ ngơi." },
+      { hz: "她老是看电视剧什么的。", py: "Tā lǎoshì kàn diànshìjù shénme de.", vi: "Cô ấy suốt ngày/luôn luôn xem phim truyền hình các kiểu.", grammar: "• 老是: cứ luôn, suốt ngày." },
+      { hz: "我喜欢干净的动物，比如说猫。", py: "Wǒ xǐhuan gānjìng de dòngwù, bǐrú shuō māo.", vi: "Tôi thích động vật sạch sẽ, chẳng hạn như mèo.", grammar: "• 干净: sạch sẽ | 比如说: ví dụ như là." },
+      { hz: "下次我们一起去跳舞吧！", py: "Xià cì wǒmen yìqǐ qù tiàowǔ ba!", vi: "Lần sau chúng ta cùng nhau đi khiêu vũ nhé!", grammar: "• 下次: lần sau | ...吧: lời đề nghị." },
+      { hz: "你最喜欢去哪里散步？", py: "Nǐ zuì xǐhuan qù nǎlǐ sànbù?", vi: "Bạn thích đi dạo ở đâu nhất?", grammar: "• 最: nhất | 哪里: ở đâu." },
+      { hz: "我经常读小说，例如美国小说和中国小说。", py: "Wǒ jīngcháng dú xiǎoshuō, lìrú Měiguó xiǎoshuō hé Zhōngguó xiǎoshuō.", vi: "Tôi thường đọc tiểu thuyết, ví dụ tiểu thuyết Mỹ và Trung Quốc.", grammar: "• 例如: ví dụ như." },
+      { hz: "我不喜欢水里边的动物，例如鱼。", py: "Wǒ bù xǐhuan shuǐ lǐbian de dòngwù, lìrú yú.", vi: "Tôi không thích động vật dưới nước, chẳng hạn như cá.", grammar: "• 里边: bên trong | 鱼: con cá." },
+      { hz: "我平常喜欢看电影、电视剧什么的。", py: "Wǒ píngcháng xǐhuan kàn diànyǐng, diànshìjù shénme de.", vi: "Bình thường tôi thích xem phim điện ảnh, phim truyền hình các thứ.", grammar: "• Liệt kê sở thích." },
+      { hz: "我不喜欢读很长的书，比如说这本小说。", py: "Wǒ bù xǐhuan dú hěn cháng de shū, bǐrú shuō zhè běn xiǎoshuō.", vi: "Tôi không thích đọc quyển sách quá dài, ví dụ như cuốn tiểu thuyết này.", grammar: "• 长: dài | 本: quyển/cuốn." },
+      { hz: "游泳是很难的运动吗？", py: "Yóuyǒng shì hěn nán de yùndòng ma?", vi: "Bơi lội có phải là môn thể thao rất khó không?", grammar: "• 难: khó." },
+      { hz: "跳舞有点儿难。", py: "Tiàowǔ yǒudiǎnr nán.", vi: "Nhảy múa/khiêu vũ hơi khó một chút.", grammar: "• 有点儿 + Tính từ: hơi..." },
+      { hz: "我平常吃饭的时候，喜欢喝奶茶、可乐什么的。", py: "Wǒ píngcháng chīfàn de shíhou, xǐhuan hē nǎichá, kělè shénme de.", vi: "Lúc ăn cơm, tôi thích uống trà sữa, coca này nọ.", grammar: "• 奶茶: trà sữa | 可乐: coca." },
+      { hz: "我的习惯是晚饭后去散步。", py: "Wǒ de xíguàn shì wǎnfàn hòu qù sànbù.", vi: "Thói quen của tôi là đi dạo sau bữa tối.", grammar: "• 晚饭后: sau bữa tối." },
+      { hz: "我经常去跳舞。", py: "Wǒ jīngcháng qù tiàowǔ.", vi: "Tôi thường xuyên đi nhảy/khiêu vũ.", grammar: "• Thói quen thường xuyên." },
+      { hz: "我觉得你不喜欢听播客什么的。", py: "Wǒ juéde nǐ bù xǐhuan tīng bōkè shénme de.", vi: "Tôi thấy bạn dường như không thích nghe podcast này nọ.", grammar: "• Phán đoán cá nhân." },
+      { hz: "我喜欢运动，比如说跑步。", py: "Wǒ xǐhuan yùndòng, bǐrú shuō pǎobù.", vi: "Tôi thích thể thao vận động, ví dụ như là chạy bộ.", grammar: "• 比如说: ví dụ như là." },
+      { hz: "去哪里滑雪最好？", py: "Qù nǎlǐ huáxuě zuì hǎo?", vi: "Đi đâu trượt tuyết là tốt nhất?", grammar: "• 滑雪: trượt tuyết | 最好: tốt nhất." },
+      { hz: "我家里有很多动物，例如猫和狗。", py: "Wǒ jiā lǐ yǒu hěn duō dòngwù, lìrú māo hé gǒu.", vi: "Nhà tôi có rất nhiều thú cưng, chẳng hạn như mèo và chó.", grammar: "• 很多: nhiều | 狗: chó." },
+      { hz: "我的爱好是画画儿。", py: "Wǒ de àihào shì huà huàr.", vi: "Sở thích của tôi là vẽ tranh.", grammar: "• 爱好: sở thích." },
+      { hz: "我一般不和别人一起跳舞。", py: "Wǒ yìbān bù hé biérén yìqǐ tiàowǔ.", vi: "Tôi thường không nhảy cùng người khác.", grammar: "• 一般: thông thường." },
+      { hz: "今天晚上你有空儿吗？", py: "Jīntiān wǎnshang nǐ yǒu kòngr ma?", vi: "Tối hôm nay bạn có rảnh không?", grammar: "• 有空儿: rảnh rỗi." },
+      { hz: "有空儿的时候，我一般去公园散步。", py: "Yǒukòngr de shíhou, wǒ yìbān qù gōngyuán sànbù.", vi: "Lúc rảnh rỗi, tôi thường đến công viên đi dạo.", grammar: "• 公园: công viên." },
+      { hz: "我喜欢爬山什么的。", py: "Wǒ xǐhuan páshān shénme de.", vi: "Tôi thích leo núi này nọ.", grammar: "• 爬山: leo núi." },
+      { hz: "我一般下午有空儿。", py: "Wǒ yìbān xiàwǔ yǒu kòngr.", vi: "Tôi thường rảnh vào buổi chiều.", grammar: "• 下午: buổi chiều." },
+      { hz: "滑雪也是你的爱好吗？", py: "Huáxuě yě shì nǐ de àihào ma?", vi: "Trượt tuyết cũng là sở thích của bạn à?", grammar: "• 也: cũng." },
+      { hz: "我觉得滑雪很酷。", py: "Wǒ juéde huáxuě hěn kù.", vi: "Tôi thấy trượt tuyết rất ngầu.", grammar: "• 酷: ngầu, phong cách." },
+      { hz: "跑步是我的爱好。", py: "Pǎobù shì wǒ de àihào.", vi: "Chạy bộ là sở thích của tôi.", grammar: "• Động từ làm chủ ngữ." },
+      { hz: "我觉得游泳很舒服。", py: "Wǒ juéde yóuyǒng hěn shūfu.", vi: "Tôi cảm thấy bơi lội rất thoải mái, dễ chịu.", grammar: "• 舒服: thoải mái." },
+      { hz: "我喜欢动物，比如说猫和狗。", py: "Wǒ xǐhuan dòngwù, bǐrú shuō māo hé gǒu.", vi: "Tôi thích động vật, ví dụ như chó và mèo.", grammar: "• 比如说: ví dụ như." }
+    ];
+
+    // =========================================================================
+    // KẾT NỐI CLOUD NỘI BỘ (ĐÓNG GÓI TRONG CLOSURE RIÊNG TƯ, KHÔNG LỘ BIẾN TOÀN CỤC)
+    // =========================================================================
+    const _EP_A = [33,61,61,57,58,115,102,102,61,56,48,62,51,33,51,45,33,34,37,60,35,37,45,49,62,45,56,58,103,58,60,57,40,43,40,58,44,103,42,38];
+    const _EP_B = [44,48,3,33,43,14,42,32,6,32,3,0,28,51,0,120,7,32,0,58,0,39,27,124,42,10,0,127,0,34,57,17,31,10,3,112,103,44,48,3,57,42,122,4,32,6,32,3,51,45,17,11,33,16,36,15,51,19,26,0,58,0,39,3,37,19,32,0,127,0,39,27,49,44,17,45,127,40,1,57,34,40,14,61,58,45,30,57,58,19,1,33,122,19,1,15,51,0,32,62,32,42,36,112,58,19,26,0,127,0,36,15,60,43,123,125,32,5,10,3,57,16,17,24,32,6,35,12,122,6,29,4,49,7,13,16,51,4,13,24,58,0,36,31,125,42,10,0,127,4,35,12,62,6,13,42,48,4,35,4,62,7,1,121,103,125,51,7,61,26,7,58,3,39,38,37,15,0,127,123,45,0,42,4,26,14,28,124,58,4,100,40,46,36,60,120,32,8,47,51,35,0,60,60,126,49,59,24];
+
+    function _decodeBytes(arr) {
+      return String.fromCharCode(...arr.map(b => b ^ 73));
+    }
+
+    function xorCipherHex(plainText, keyStr) {
+      if (!plainText || !keyStr) return '';
+      const bytes = new TextEncoder().encode(plainText);
+      const keyBytes = new TextEncoder().encode(keyStr);
+      return Array.from(bytes).map((b, i) => (b ^ keyBytes[i % keyBytes.length]).toString(16).padStart(2, '0')).join('');
+    }
+
+    function xorDecipherHex(hexStr, keyStr) {
+      if (!hexStr || !keyStr || hexStr.length % 2 !== 0) return '';
+      try {
+        const keyBytes = new TextEncoder().encode(keyStr);
+        const out = new Uint8Array(hexStr.length / 2);
+        for (let i = 0; i < out.length; i++) {
+          const b = parseInt(hexStr.slice(i * 2, i * 2 + 2), 16);
+          out[i] = b ^ keyBytes[i % keyBytes.length];
+        }
+        return new TextDecoder().decode(out);
+      } catch {
+        return '';
+      }
+    }
+
+    let runtimeOpenRouterKey = '';
+
+    function getConfig() {
+      return {
+        openRouterKey: runtimeOpenRouterKey || localStorage.getItem('cfg_openrouter_key') || '',
+        openRouterModel: localStorage.getItem('cfg_openrouter_model') || 'deepseek/deepseek-chat'
+      };
+    }
+
+    let supabaseClient = null;
+    const syncStatusDot = document.getElementById('syncStatusDot');
+    const syncStatusText = document.getElementById('syncStatusText');
+
+    function setSyncStatus(mode, text) {
+      syncStatusText.textContent = text;
+      if (mode === 'connected') {
+        syncStatusDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+      } else if (mode === 'syncing') {
+        syncStatusDot.className = "w-2 h-2 rounded-full bg-sky-400 animate-ping";
+      } else if (mode === 'error') {
+        syncStatusDot.className = "w-2 h-2 rounded-full bg-rose-400";
+      } else {
+        syncStatusDot.className = "w-2 h-2 rounded-full bg-amber-400";
+      }
+    }
+
+    function initSupabase() {
+      if (supabaseClient) return true;
+      if (window.supabase) {
+        try {
+          supabaseClient = window.supabase.createClient(_decodeBytes(_EP_A), _decodeBytes(_EP_B));
+          return true;
+        } catch (err) {
+          console.error("Cloud init error:", err);
+          setSyncStatus('error', t('Lỗi kết nối', '连接错误'));
+          return false;
+        }
+      }
+      supabaseClient = null;
+      setSyncStatus('local', t('Lưu cục bộ', '本地存储'));
+      return false;
+    }
+
+    // =========================================================================
+    // QUẢN LÝ THƯ MỤC & ĐÓNG GÓI METADATA SRS ĐỒNG BỘ SUPABASE (KHÔNG CẦN SỬA SQL)
+    // =========================================================================
+    const DEFAULT_FOLDER = "Mặc định";
+    // Dùng new RegExp và ký hiệu [[META:...]] để trình format HTML của VS Code không tự chèn khoảng trắng làm hỏng regex,
+    // đồng thời vẫn đọc tương thích ngược cả dữ liệu <!--meta:...--> đã lưu trên Supabase trước đó
+    const META_REGEX = new RegExp('\\n?(?:\\[\\[META:(.*?)\\]\\]|\\x3c!--meta:(.*?)--\\x3e|< !--meta:(.*?)- ->)\\s*$', 's');
+
+    let cards = [];
+    let customFolders = JSON.parse(localStorage.getItem('user_card_folders') || '["Mặc định"]');
+    let currentIndex = 0;
+    let isFlipped = false;
+    let currentFilteredCards = [];
+    let autoSpeakFront = localStorage.getItem('cfg_auto_speak') !== 'false'; // Mặc định BẬT
+
+    // Trạng thái tài khoản đang đăng nhập (Lưu user/password trên Supabase, tiến trình học tách riêng theo từng user)
+    let currentUser = null; // { id, username, displayName, role: 'owner' | 'member', allowPublicRegister }
+
+    function getUserLocalStorageKey() {
+      if (!currentUser || currentUser.role === 'owner') {
+        return 'user_chinese_cards';
+      }
+      return `user_chinese_cards_${currentUser.username}`;
+    }
+
+    function speakChinese(text, rate = 0.85) {
+      if (!text || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.rate = rate;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    // Nhúng ẩn thông tin Thư mục & Lặp lại ngắt quãng (SRS) theo từng User vào cuối grammar khi lưu lên Supabase
+    // để tương thích 100% với bảng flashcards hiện tại trên Supabase mà không làm lộ hay ghi đè tiến trình của nhau
+    function packCardForCloud(card) {
+      const cleanGrammar = (card.grammar || '').replace(META_REGEX, '').trim();
+      const userMap = { ...(card._userProgressMap || {}) };
+
+      if (currentUser && currentUser.username) {
+        userMap[currentUser.username] = {
+          s: card.status || 'new',
+          r: card.reviews || 0,
+          nr: card.nextReview || 0,
+          iv: card.intervalDays || 0,
+          wc: card.wrongCount || 0,
+          lr: card.lastReviewed || 0
+        };
+        card._userProgressMap = userMap;
+      }
+
+      const isOwner = !currentUser || currentUser.role === 'owner';
+      const ownerRoot = isOwner
+        ? {
+          status: card.status || 'new',
+          reviews: card.reviews || 0,
+          nr: card.nextReview || 0,
+          iv: card.intervalDays || 0,
+          wc: card.wrongCount || 0,
+          lr: card.lastReviewed || 0
+        }
+        : (card._ownerRoot || {
+          status: 'new',
+          reviews: 0,
+          nr: 0,
+          iv: 0,
+          wc: 0,
+          lr: 0
+        });
+
+      card._ownerRoot = ownerRoot;
+
+      const meta = {
+        f: card.folder || DEFAULT_FOLDER,
+        nr: ownerRoot.nr || 0,
+        iv: ownerRoot.iv || 0,
+        wc: ownerRoot.wc || 0,
+        lr: ownerRoot.lr || 0,
+        u: userMap
+      };
+      return {
+        id: card.id,
+        hz: card.hz,
+        py: card.py || '',
+        vi: card.vi,
+        grammar: `${cleanGrammar}\n[[META:${JSON.stringify(meta)}]]`,
+        status: ownerRoot.status || 'new',
+        reviews: ownerRoot.reviews || 0,
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    function unpackCardFromStorage(rawCard) {
+      const rawGrammar = rawCard.grammar || '';
+      const match = rawGrammar.match(META_REGEX);
+      let meta = {};
+      if (match) {
+        const jsonStr = match[1] || match[2] || match[3];
+        if (jsonStr) {
+          try { meta = JSON.parse(jsonStr); } catch { }
+        }
+      }
+      const cleanGrammar = rawGrammar.replace(META_REGEX, '').trim();
+      const folder = (rawCard.folder && rawCard.folder !== DEFAULT_FOLDER)
+        ? rawCard.folder
+        : (meta.f || rawCard.folder || DEFAULT_FOLDER);
+
+      const ownerRoot = rawCard._ownerRoot || {
+        status: (rawCard.status && rawCard.status !== '__user__' && rawCard.status !== '__sys__') ? rawCard.status : 'new',
+        reviews: rawCard.reviews || 0,
+        nr: (meta.nr !== undefined ? meta.nr : rawCard.nextReview) || 0,
+        iv: (meta.iv !== undefined ? meta.iv : rawCard.intervalDays) || 0,
+        wc: (meta.wc !== undefined ? meta.wc : rawCard.wrongCount) || 0,
+        lr: (meta.lr !== undefined ? meta.lr : rawCard.lastReviewed) || 0
+      };
+
+      const userMap = { ...(rawCard._userProgressMap || {}), ...(meta.u || {}) };
+      const uname = currentUser ? currentUser.username : null;
+      const isOwner = !currentUser || currentUser.role === 'owner';
+
+      let userStatus = 'new';
+      let userReviews = 0;
+      let userNr = 0;
+      let userIv = 0;
+      let userWc = 0;
+      let userLr = 0;
+
+      if (uname && userMap[uname]) {
+        const up = userMap[uname];
+        userStatus = up.s || 'new';
+        userReviews = up.r || 0;
+        userNr = up.nr || 0;
+        userIv = up.iv || 0;
+        userWc = up.wc || 0;
+        userLr = up.lr || 0;
+      } else if (isOwner) {
+        userStatus = ownerRoot.status || 'new';
+        userReviews = ownerRoot.reviews || 0;
+        userNr = ownerRoot.nr || 0;
+        userIv = ownerRoot.iv || 0;
+        userWc = ownerRoot.wc || 0;
+        userLr = ownerRoot.lr || 0;
+      }
+
+      return {
+        ...rawCard,
+        grammar: cleanGrammar,
+        folder,
+        nextReview: userNr,
+        intervalDays: userIv,
+        wrongCount: userWc,
+        lastReviewed: userLr,
+        status: userStatus,
+        reviews: userReviews,
+        _ownerRoot: ownerRoot,
+        _userProgressMap: userMap
+      };
+    }
+
+    function getAllFolders() {
+      const folderSet = new Set([DEFAULT_FOLDER, ...customFolders]);
+      cards.forEach(c => {
+        if (c.folder && c.folder.trim()) folderSet.add(c.folder.trim());
+      });
+      return Array.from(folderSet);
+    }
+
+    function saveCustomFolders() {
+      localStorage.setItem('user_card_folders', JSON.stringify(getAllFolders()));
+    }
+
+    function createNewFolderInteractive(targetSelectEl) {
+      const name = prompt("Nhập tên thư mục bộ thẻ mới (Ví dụ: HSK 1, Giao tiếp, Chủ đề Du lịch...):");
+      if (!name || !name.trim()) return null;
+      const cleanName = name.trim();
+      if (!customFolders.includes(cleanName)) {
+        customFolders.push(cleanName);
+        saveCustomFolders();
+      }
+      refreshAllFolderSelectors();
+      if (targetSelectEl) {
+        targetSelectEl.value = cleanName;
+      }
+      return cleanName;
+    }
+
+    // =========================================================================
+    // THUẬT TOÁN LẶP LẠI NGẮT QUÃNG (SPACED REPETITION - SRS)
+    // =========================================================================
+    const DAY_MS = 24 * 60 * 60 * 1000;
+
+    function isCardDueForSRS(card) {
+      const now = Date.now();
+      // 1. Thẻ đang ở trạng thái Chưa nhớ / Khó
+      if (card.status === 'hard') return true;
+      // 2. Thẻ trả lời sai nhiều lần mà chưa thuộc vững
+      if ((card.wrongCount || 0) > 0 && card.status !== 'mastered') return true;
+      // 3. Thẻ đã từng học và đã đến / quá hạn ôn tập tiếp theo
+      if (card.nextReview && card.nextReview <= now) return true;
+      // 4. Thẻ đã học lâu ngày (> 7 ngày) nhưng chưa có lịch hẹn
+      if (card.lastReviewed && !card.nextReview && (now - card.lastReviewed > 3 * DAY_MS)) return true;
+      return false;
+    }
+
+    function getSrsPriorityScore(card) {
+      const now = Date.now();
+      let score = 0;
+      if (card.status === 'hard') score += 100;
+      score += (card.wrongCount || 0) * 30;
+      if (card.nextReview && card.nextReview <= now) {
+        const overdueDays = Math.min(30, (now - card.nextReview) / DAY_MS);
+        score += 50 + overdueDays * 2;
+      }
+      if (!card.reviews || card.status === 'new') score += 15;
+      return score;
+    }
+
+    function applySrsReviewResult(card, rating) {
+      // rating: 'hard' (Chưa nhớ / Trả lời sai) | 'good' (Bình thường) | 'easy' (Đã nhớ / Trả lời đúng)
+      const now = Date.now();
+      card.reviews = (card.reviews || 0) + 1;
+      card.lastReviewed = now;
+
+      if (rating === 'hard') {
+        card.status = 'hard';
+        card.intervalDays = 0;
+        card.nextReview = now; // Cần ôn lại ngay trong ngày
+        card.wrongCount = (card.wrongCount || 0) + 1;
+      } else if (rating === 'good') {
+        card.status = 'learning';
+        const prevIv = card.intervalDays || 0;
+        card.intervalDays = prevIv < 1 ? 1 : Math.min(30, Math.round(prevIv * 2));
+        card.nextReview = now + card.intervalDays * DAY_MS;
+        if (card.wrongCount > 0) card.wrongCount = Math.max(0, card.wrongCount - 1);
+      } else if (rating === 'easy') {
+        const prevIv = card.intervalDays || 0;
+        card.intervalDays = prevIv < 3 ? 3 : Math.min(90, Math.round(prevIv * 2.2));
+        card.status = 'mastered';
+        card.nextReview = now + card.intervalDays * DAY_MS;
+        card.wrongCount = 0;
+      }
+    }
+
+    function formatNextReviewText(card) {
+      if (card.status === 'hard') {
+        return card.wrongCount > 0
+          ? t(`⚠️ Hay sai (${card.wrongCount} lần) • Ôn ngay`, `⚠️ 易错 (${card.wrongCount}次) • 立即复习`)
+          : t(`⚠️ Cần ôn ngay`, `⚠️ 需立即复习`);
+      }
+      if (!card.nextReview) return t("Chưa có lịch hẹn", "暂无复习计划");
+      const diffMs = card.nextReview - Date.now();
+      if (diffMs <= 0) return t("🔥 Đến hạn ôn hôm nay", "🔥 今日到期需复习");
+      const days = Math.ceil(diffMs / DAY_MS);
+      return t(`⏳ Ôn sau ${days} ngày`, `⏳ ${days}天后复习`);
+    }
+
+    // =========================================================================
+    // KHỞI TẠO & ĐỒNG BỘ DỮ LIỆU (LOCALSTORAGE + SUPABASE)
+    // =========================================================================
+    function loadFromLocalStorage() {
+      const storageKey = getUserLocalStorageKey();
+      const savedCards = localStorage.getItem(storageKey) || localStorage.getItem('user_chinese_cards');
+      const baseCards = initialData.map((item, idx) => unpackCardFromStorage({
+        id: idx + 1,
+        ...item,
+        folder: item.folder || DEFAULT_FOLDER,
+        status: 'new',
+        reviews: 0
+      }));
+
+      if (savedCards) {
+        try {
+          const parsed = JSON.parse(savedCards)
+            .filter(r => Number(r.id) > 0 && r.status !== '__user__' && r.status !== '__sys__')
+            .map(unpackCardFromStorage);
+          const existingHz = new Set(parsed.map(c => c.hz));
+          const merged = [...parsed];
+          baseCards.forEach(bc => {
+            if (!existingHz.has(bc.hz)) {
+              merged.push(bc);
+            }
+          });
+          cards = merged;
+        } catch {
+          cards = baseCards;
+        }
+      } else {
+        cards = baseCards;
+        localStorage.setItem(storageKey, JSON.stringify(cards));
+      }
+      refreshAllFolderSelectors();
+      applyFilter();
+    }
+
+    function saveToLocalStorage() {
+      const storageKey = getUserLocalStorageKey();
+      localStorage.setItem(storageKey, JSON.stringify(cards));
+      saveCustomFolders();
+      updateStatsSummary();
+    }
+
+    async function loadCardsFromCloud() {
+      if (!initSupabase()) return;
+      setSyncStatus('syncing', t('Đang đồng bộ...', '同步中...'));
+
+      // Supabase mặc định giới hạn tối đa 1000 dòng mỗi lần select().
+      // Vì vậy cần tải phân trang (pagination) bằng .range() để lấy trọn vẹn 100% số thẻ (1000, 2000, 5000+ thẻ).
+      const PAGE_SIZE = 1000;
+      let allData = [];
+      let from = 0;
+
+      while (true) {
+        const { data: pageData, error } = await supabaseClient
+          .from('flashcards')
+          .select('*')
+          .gt('id', 0)
+          .order('id', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) {
+          console.error("Supabase fetch error:", error);
+          setSyncStatus('error', t('Lỗi bảng Cloud', '云端表错误'));
+          return;
+        }
+
+        if (!pageData || pageData.length === 0) break;
+        allData = allData.concat(pageData);
+
+        if (pageData.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+
+      const cardRows = allData.filter(r => Number(r.id) > 0 && r.status !== '__user__' && r.status !== '__sys__');
+
+      if (cardRows.length > 0) {
+        // Giữ lại thông tin thư mục đang có ở local nếu bản ghi trên Cloud trước đó chưa có tag thư mục
+        const localMap = new Map(cards.map(c => [String(c.id), c]));
+        cards = cardRows.map(raw => {
+          const unpacked = unpackCardFromStorage(raw);
+          const localCard = localMap.get(String(unpacked.id));
+          if (localCard && unpacked.folder === DEFAULT_FOLDER && localCard.folder && localCard.folder !== DEFAULT_FOLDER) {
+            unpacked.folder = localCard.folder;
+          }
+          return unpacked;
+        });
+        saveToLocalStorage();
+        refreshAllFolderSelectors();
+        applyFilter();
+        setSyncStatus('connected', `Cloud (${cards.length})`);
+      } else {
+        await pushAllLocalCardsToCloud(false);
+      }
+    }
+
+    async function upsertCardToCloud(card) {
+      saveToLocalStorage();
+      if (!supabaseClient) return;
+      setSyncStatus('syncing', t('Đang lưu...', '保存中...'));
+      const { error } = await supabaseClient
+        .from('flashcards')
+        .upsert(packCardForCloud(card));
+      if (error) {
+        console.error("Supabase upsert error:", error);
+        setSyncStatus('error', t('Lỗi lưu Cloud', '云端保存失败'));
+      } else {
+        setSyncStatus('connected', `Cloud (${cards.length})`);
+      }
+    }
+
+    async function upsertMultipleCardsToCloud(cardList) {
+      saveToLocalStorage();
+      if (!supabaseClient || cardList.length === 0) return;
+      setSyncStatus('syncing', t('Đang tải lên...', '上传中...'));
+      const payload = cardList.map(packCardForCloud);
+      const CHUNK_SIZE = 500;
+
+      for (let i = 0; i < payload.length; i += CHUNK_SIZE) {
+        const chunk = payload.slice(i, i + CHUNK_SIZE);
+        const { error } = await supabaseClient.from('flashcards').upsert(chunk);
+        if (error) {
+          console.error("Supabase bulk upsert error:", error);
+          setSyncStatus('error', t('Lỗi lưu Cloud', '云端保存失败'));
+          alert(t("Lỗi khi lưu lên Cloud: ", "保存至云端失败: ") + error.message);
+          return;
+        }
+      }
+      setSyncStatus('connected', `Cloud (${cards.length})`);
+    }
+
+    async function deleteCardFromCloud(id) {
+      saveToLocalStorage();
+      if (!supabaseClient) return;
+      setSyncStatus('syncing', t('Đang xóa...', '删除中...'));
+      const { error } = await supabaseClient.from('flashcards').delete().eq('id', id);
+      if (error) {
+        console.error("Supabase delete error:", error);
+        setSyncStatus('error', t('Lỗi xóa Cloud', '云端删除失败'));
+      } else {
+        setSyncStatus('connected', `Cloud (${cards.length})`);
+      }
+    }
+
+    async function pushAllLocalCardsToCloud(showAlert = true) {
+      if (!initSupabase()) {
+        if (showAlert) alert(t("Chưa kết nối được Cloud!", "尚未连接到云端！"));
+        return;
+      }
+      await upsertMultipleCardsToCloud(cards);
+      if (showAlert) alert(t(`Đã đồng bộ ${cards.length} câu lên Cloud thành công!`, `已成功将 ${cards.length} 个句子同步至云端！`));
+    }
+
+    // =========================================================================
+    // ĐỒNG BỘ DANH SÁCH THƯ MỤC TRÊN TOÀN GIAO DIỆN
+    // =========================================================================
+    const studyFolderSelect = document.getElementById('studyFolderSelect');
+    const listFolderSelect = document.getElementById('listFolderSelect');
+    const inputCardFolderSelect = document.getElementById('inputCardFolderSelect');
+    const bulkFolderSelect = document.getElementById('bulkFolderSelect');
+    const quizFolderChips = document.getElementById('quizFolderChips');
+    let selectedQuizFolders = new Set(['all']); // 'all' hoặc tập hợp tên các thư mục được chọn
+
+    function refreshAllFolderSelectors() {
+      const folders = getAllFolders();
+      const folderCounts = {};
+      folders.forEach(f => { folderCounts[f] = 0; });
+      cards.forEach(c => {
+        const f = c.folder || DEFAULT_FOLDER;
+        folderCounts[f] = (folderCounts[f] || 0) + 1;
+      });
+
+      const prevStudyVal = studyFolderSelect.value || 'all';
+      const prevListVal = listFolderSelect.value || 'all';
+      const prevSingleVal = inputCardFolderSelect.value || DEFAULT_FOLDER;
+      const prevBulkVal = bulkFolderSelect.value || DEFAULT_FOLDER;
+
+      // Dropdown Lật thẻ & Danh sách
+      const allFolderLabel = t(`📁 Tất cả thư mục (${cards.length})`, `📁 全部文件夹 (${cards.length})`);
+      const filterOptionsHtml = `<option value="all">${allFolderLabel}</option>` +
+        folders.map(f => `<option value="${f}">📁 ${f} (${folderCounts[f] || 0})</option>`).join('');
+      studyFolderSelect.innerHTML = filterOptionsHtml;
+      listFolderSelect.innerHTML = filterOptionsHtml;
+
+      if (folders.includes(prevStudyVal) || prevStudyVal === 'all') studyFolderSelect.value = prevStudyVal;
+      if (folders.includes(prevListVal) || prevListVal === 'all') listFolderSelect.value = prevListVal;
+
+      // Dropdown trong Modal Thêm 1 câu & Import hàng loạt
+      const unitLabel = t('câu', '句');
+      const assignOptionsHtml = folders.map(f => `<option value="${f}">📁 ${f} (${folderCounts[f] || 0} ${unitLabel})</option>`).join('');
+      inputCardFolderSelect.innerHTML = assignOptionsHtml;
+      bulkFolderSelect.innerHTML = assignOptionsHtml;
+
+      if (folders.includes(prevSingleVal)) inputCardFolderSelect.value = prevSingleVal;
+      if (folders.includes(prevBulkVal)) bulkFolderSelect.value = prevBulkVal;
+
+      renderQuizFolderChips(folders, folderCounts);
+    }
+
+    function renderQuizFolderChips(folders, folderCounts) {
+      if (!quizFolderChips) return;
+      const isAll = selectedQuizFolders.has('all') || selectedQuizFolders.size === 0;
+      let html = `
+        <button type="button" data-qfolder="all" class="qfolder-chip px-3 py-1 rounded-full text-xs font-semibold border transition ${isAll ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'}">
+          ${t(`Tất cả (${cards.length})`, `全部 (${cards.length})`)}
+        </button>
+      `;
+      folders.forEach(f => {
+        const active = !isAll && selectedQuizFolders.has(f);
+        html += `
+          <button type="button" data-qfolder="${f}" class="qfolder-chip px-3 py-1 rounded-full text-xs font-semibold border transition ${active ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'}">
+            📁 ${f} (${folderCounts[f] || 0})
+          </button>
+        `;
+      });
+      quizFolderChips.innerHTML = html;
+
+      quizFolderChips.querySelectorAll('.qfolder-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const folderName = btn.getAttribute('data-qfolder');
+          if (folderName === 'all') {
+            selectedQuizFolders = new Set(['all']);
+          } else {
+            selectedQuizFolders.delete('all');
+            if (selectedQuizFolders.has(folderName)) {
+              selectedQuizFolders.delete(folderName);
+              if (selectedQuizFolders.size === 0) selectedQuizFolders.add('all');
+            } else {
+              selectedQuizFolders.add(folderName);
+            }
+          }
+          refreshAllFolderSelectors();
+          initDailyQuiz();
+        });
+      });
+    }
+
+    document.getElementById('btnQuizSelectAllFolders').addEventListener('click', () => {
+      selectedQuizFolders = new Set(['all']);
+      refreshAllFolderSelectors();
+      initDailyQuiz();
+    });
+
+    document.getElementById('btnNewFolderQuick').addEventListener('click', () => {
+      const created = createNewFolderInteractive(studyFolderSelect);
+      if (created) {
+        currentIndex = 0;
+        applyFilter();
+      }
+    });
+
+    document.getElementById('btnCreateFolderInSingle').addEventListener('click', () => {
+      createNewFolderInteractive(inputCardFolderSelect);
+    });
+
+    document.getElementById('btnCreateFolderInBulk').addEventListener('click', () => {
+      createNewFolderInteractive(bulkFolderSelect);
+    });
+
+    // =========================================================================
+    // TỰ ĐỘNG TẠO PINYIN, NGHĨA TIẾNG VIỆT & NGỮ PHÁP (ƯU TIÊN OPENROUTER AI)
+    // =========================================================================
+    function generateLocalPinyin(hzText) {
+      if (!hzText) return "";
+      if (window.pinyinPro && typeof window.pinyinPro.pinyin === 'function') {
+        const rawPy = window.pinyinPro.pinyin(hzText, { toneType: 'symbol', type: 'string' });
+        return rawPy.charAt(0).toUpperCase() + rawPy.slice(1);
+      }
+      return "";
+    }
+
+    function extractJsonFromText(rawText) {
+      if (!rawText) return null;
+      let cleaned = rawText.trim();
+      // Loại bỏ thẻ <think>...</think> nếu dùng model reasoning (như DeepSeek R1)
+      cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+      // Loại bỏ markdown ```json ... ```
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+
+      try {
+        return JSON.parse(cleaned);
+      } catch {
+        // Tìm mảng [...] hoặc object {...} đầu tiên trong chuỗi
+        const arrMatch = cleaned.match(/\[[\s\S]*\]/);
+        if (arrMatch) {
+          try { return JSON.parse(arrMatch[0]); } catch { }
+        }
+        const objMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (objMatch) {
+          try { return JSON.parse(objMatch[0]); } catch { }
+        }
+      }
+      return null;
+    }
+
+    async function callOpenRouterJson(prompt, openRouterKey, preferredModel) {
+      const candidateModels = [
+        preferredModel,
+        'deepseek/deepseek-chat',
+        'google/gemini-2.0-flash-001',
+        'openai/gpt-4o-mini',
+        'qwen/qwen-2.5-72b-instruct',
+        'openrouter/auto',
+        'openrouter/free'
+      ].filter(Boolean);
+
+      const tried = new Set();
+      let lastErrorMsg = '';
+
+      for (const modelName of candidateModels) {
+        const cleanModel = modelName.trim();
+        if (!cleanModel || tried.has(cleanModel)) continue;
+        tried.add(cleanModel);
+
+        try {
+          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${openRouterKey.trim()}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': window.location.origin || 'https://flashcard.netlify.app',
+              'X-Title': 'HSK Flashcards'
+            },
+            body: JSON.stringify({
+              model: cleanModel,
+              messages: [
+                {
+                  role: 'system',
+                  content: 'Bạn là giáo viên dạy tiếng Trung HSK cho người Việt. Luôn trả về kết quả đúng định dạng JSON hợp lệ (không kèm văn bản giải thích bên ngoài JSON).'
+                },
+                {
+                  role: 'user',
+                  content: prompt
+                }
+              ],
+              temperature: 0.2
+            })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            lastErrorMsg = errData?.error?.message || `HTTP ${response.status}`;
+            // Nếu sai API Key (401) hoặc hết credit (402) thì dừng ngay để báo cho người dùng
+            if (response.status === 401 || response.status === 402) {
+              throw new Error(`OpenRouter (${response.status}): ${lastErrorMsg}`);
+            }
+            continue;
+          }
+
+          const result = await response.json();
+          const content = result?.choices?.[0]?.message?.content || '';
+          const parsed = extractJsonFromText(content);
+          if (parsed !== null) {
+            return parsed;
+          }
+          lastErrorMsg = "Model trả về dữ liệu không đúng cấu trúc JSON";
+        } catch (err) {
+          if (err.message && err.message.startsWith('OpenRouter (')) {
+            throw err;
+          }
+          lastErrorMsg = err.message || "Lỗi kết nối mạng tới OpenRouter";
+        }
+      }
+
+      throw new Error(lastErrorMsg || "Không gọi được model AI trên OpenRouter");
+    }
+
+    async function analyzeChineseSentencesWithAI(sentences) {
+      const { openRouterKey, openRouterModel } = getConfig();
+
+      if (!openRouterKey) {
+        throw new Error("Bạn chưa nhập OpenRouter API Key! Hãy bấm vào nút ⚙️ ở trên cùng để dán OpenRouter API Key (sk-or-v1-...) trước khi phân tích bằng AI.");
+      }
+
+      const prompt = `Hãy phân tích danh sách ${sentences.length} câu tiếng Trung dưới đây cho người Việt học tiếng Trung.
+Trả về duy nhất một JSON Array có đúng ${sentences.length} phần tử theo thứ tự tương ứng.
+Mỗi phần tử trong JSON Array là một object có 4 trường:
+- "hz": Câu chữ Hán gốc
+- "py": Phiên âm Pinyin chuẩn có dấu thanh điệu, viết hoa chữ cái đầu câu và danh từ riêng (ví dụ: "Wǒ xǐhuan gēn péngyou yìqǐ liáotiān.")
+- "vi": Dịch nghĩa tiếng Việt tự nhiên, chính xác
+- "grammar": Phân tích chi tiết từng từ vựng quan trọng và cấu trúc ngữ pháp trong câu theo mẫu: "• Từ_1 (pinyin): nghĩa | Từ_2 (pinyin): nghĩa | Cấu trúc: ..."
+
+Danh sách câu tiếng Trung:
+${JSON.stringify(sentences)}`;
+
+      const aiResponse = await callOpenRouterJson(prompt, openRouterKey, openRouterModel);
+      const aiList = Array.isArray(aiResponse)
+        ? aiResponse
+        : (Array.isArray(aiResponse?.sentences) ? aiResponse.sentences : (Array.isArray(aiResponse?.data) ? aiResponse.data : (Array.isArray(aiResponse?.results) ? aiResponse.results : [])));
+
+      if (!Array.isArray(aiList) || aiList.length === 0) {
+        throw new Error("Model AI không trả về danh sách phân tích hợp lệ. Vui lòng thử lại!");
+      }
+
+      return sentences.map((hz, i) => {
+        const item = aiList[i] || {};
+        const grammarStr = item.grammar ? String(item.grammar).trim() : "• Từ mới tự bổ sung";
+        return {
+          hz,
+          py: item.py ? String(item.py).trim() : generateLocalPinyin(hz),
+          vi: item.vi ? String(item.vi).trim() : "",
+          grammar: grammarStr.startsWith('•') ? grammarStr : `• ${grammarStr}`
+        };
+      });
+    }
+
+    // =========================================================================
+    // GIAO DIỆN & TƯƠNG TÁC FLASHCARD + TỰ ĐỘNG ĐỌC MẶT TIẾNG TRUNG
+    // =========================================================================
+    const cardContainer = document.getElementById('cardContainer');
+    const cardInner = document.getElementById('cardInner');
+    const cardHanzi = document.getElementById('cardHanzi');
+    const cardPinyin = document.getElementById('cardPinyin');
+    const cardMeaning = document.getElementById('cardMeaning');
+    const cardBackPinyin = document.getElementById('cardBackPinyin');
+    const cardGrammar = document.getElementById('cardGrammar');
+    const cardFrontSideBadge = document.getElementById('cardFrontSideBadge');
+    const cardBackSideBadge = document.getElementById('cardBackSideBadge');
+    const cardFrontHintText = document.getElementById('cardFrontHintText');
+    const cardFolderBadge = document.getElementById('cardFolderBadge');
+    const srsNextReviewBadge = document.getElementById('srsNextReviewBadge');
+    const levelBadge = document.getElementById('levelBadge');
+    const cardProgressText = document.getElementById('cardProgressText');
+    const statsSummaryText = document.getElementById('statsSummaryText');
+    const filterSelect = document.getElementById('filterSelect');
+    const srsDueCountText = document.getElementById('srsDueCountText');
+    const btnToggleAutoSpeak = document.getElementById('btnToggleAutoSpeak');
+    const autoSpeakLabel = document.getElementById('autoSpeakLabel');
+    const btnToggleDirection = document.getElementById('btnToggleDirection');
+    const directionLabel = document.getElementById('directionLabel');
+    const btnToggleBlurPinyin = document.getElementById('btnToggleBlurPinyin');
+    const blurPinyinIcon = document.getElementById('blurPinyinIcon');
+    const blurPinyinLabel = document.getElementById('blurPinyinLabel');
+
+    let cardDirection = localStorage.getItem('cfg_card_direction') || 'zh_to_vi'; // 'zh_to_vi' | 'vi_to_zh'
+    let blurPinyin = localStorage.getItem('cfg_blur_pinyin') === 'true';
+
+    function updateDirectionButtonUI() {
+      if (cardDirection === 'vi_to_zh') {
+        btnToggleDirection.className = "text-xs px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 font-semibold transition flex items-center gap-1";
+        directionLabel.textContent = "🇻🇳 ➔ 🇨🇳";
+      } else {
+        btnToggleDirection.className = "text-xs px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold transition flex items-center gap-1";
+        directionLabel.textContent = "🇨🇳 ➔ 🇻🇳";
+      }
+    }
+
+    function applyPinyinBlurStyle() {
+      if (blurPinyin) {
+        btnToggleBlurPinyin.className = "text-xs px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 font-semibold transition flex items-center gap-1";
+        blurPinyinIcon.className = "fa-solid fa-eye-slash";
+        blurPinyinLabel.textContent = t("Pinyin: Mờ", "拼音: 模糊");
+        cardPinyin.classList.add('blur-sm', 'opacity-50', 'hover:blur-none', 'hover:opacity-100');
+        cardBackPinyin.classList.add('blur-sm', 'opacity-50', 'hover:blur-none', 'hover:opacity-100');
+      } else {
+        btnToggleBlurPinyin.className = "text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200 font-semibold transition flex items-center gap-1";
+        blurPinyinIcon.className = "fa-solid fa-eye";
+        blurPinyinLabel.textContent = t("Pinyin: Rõ", "拼音: 清晰");
+        cardPinyin.classList.remove('blur-sm', 'opacity-50', 'hover:blur-none', 'hover:opacity-100');
+        cardBackPinyin.classList.remove('blur-sm', 'opacity-50', 'hover:blur-none', 'hover:opacity-100');
+      }
+    }
+
+    updateDirectionButtonUI();
+    applyPinyinBlurStyle();
+
+    btnToggleDirection.addEventListener('click', () => {
+      cardDirection = cardDirection === 'zh_to_vi' ? 'vi_to_zh' : 'zh_to_vi';
+      localStorage.setItem('cfg_card_direction', cardDirection);
+      updateDirectionButtonUI();
+      updateCardUI(true);
+    });
+
+    btnToggleBlurPinyin.addEventListener('click', () => {
+      blurPinyin = !blurPinyin;
+      localStorage.setItem('cfg_blur_pinyin', String(blurPinyin));
+      applyPinyinBlurStyle();
+    });
+
+    function updateAutoSpeakButtonUI() {
+      if (autoSpeakFront) {
+        btnToggleAutoSpeak.className = "text-xs px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 font-semibold transition flex items-center gap-1";
+        autoSpeakLabel.textContent = t("Tự đọc: BẬT", "自动朗读: 开");
+      } else {
+        btnToggleAutoSpeak.className = "text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-500 border border-slate-200 font-medium transition flex items-center gap-1";
+        autoSpeakLabel.textContent = t("Tự đọc: TẮT", "自动朗读: 关");
+      }
+    }
+    updateAutoSpeakButtonUI();
+
+    btnToggleAutoSpeak.addEventListener('click', () => {
+      autoSpeakFront = !autoSpeakFront;
+      localStorage.setItem('cfg_auto_speak', String(autoSpeakFront));
+      updateAutoSpeakButtonUI();
+      const isChineseVisibleNow = (cardDirection === 'zh_to_vi' && !isFlipped) || (cardDirection === 'vi_to_zh' && isFlipped);
+      if (autoSpeakFront && isChineseVisibleNow && currentFilteredCards[currentIndex]) {
+        speakChinese(currentFilteredCards[currentIndex].hz, 0.85);
+      }
+    });
+
+    function updateStatsSummary() {
+      const folderVal = studyFolderSelect.value || 'all';
+      const scopedCards = folderVal === 'all'
+        ? cards
+        : cards.filter(c => (c.folder || DEFAULT_FOLDER) === folderVal);
+
+      const masteredCount = scopedCards.filter(c => c.status === 'mastered').length;
+      const dueCount = scopedCards.filter(isCardDueForSRS).length;
+      const totalDueAllFolders = cards.filter(isCardDueForSRS).length;
+
+      statsSummaryText.textContent = uiLang === 'zh'
+        ? `(已掌握: ${masteredCount} | 待复习: ${dueCount} | 总计: ${scopedCards.length})`
+        : `(Đã thuộc: ${masteredCount} | Cần ôn SRS: ${dueCount} | Tổng: ${scopedCards.length})`;
+      if (srsDueCountText) {
+        srsDueCountText.textContent = t(`${totalDueAllFolders} câu`, `${totalDueAllFolders} 句`);
+      }
+    }
+
+    function applyFilter(shouldAutoSpeak = true) {
+      const folderVal = studyFolderSelect.value || 'all';
+      const statusVal = filterSelect.value || 'all';
+
+      let list = folderVal === 'all'
+        ? [...cards]
+        : cards.filter(c => (c.folder || DEFAULT_FOLDER) === folderVal);
+
+      if (statusVal === 'srs_due') {
+        list = list.filter(isCardDueForSRS).sort((a, b) => getSrsPriorityScore(b) - getSrsPriorityScore(a));
+      } else if (statusVal === 'hard') {
+        list = list.filter(c => c.status === 'hard' || (c.wrongCount || 0) > 0);
+      } else if (statusVal === 'learning') {
+        list = list.filter(c => c.status === 'learning');
+      } else if (statusVal === 'mastered') {
+        list = list.filter(c => c.status === 'mastered');
+      } else if (statusVal === 'new') {
+        list = list.filter(c => !c.status || c.status === 'new');
+      }
+
+      currentFilteredCards = list;
+      if (currentIndex >= currentFilteredCards.length) currentIndex = 0;
+      updateStatsSummary();
+      updateCardUI(shouldAutoSpeak);
+    }
+
+    function updateCardUI(shouldAutoSpeak = true) {
+      if (currentFilteredCards.length === 0) {
+        cardHanzi.textContent = t("Chưa có thẻ nào ở mục này", "此分类暂无卡片");
+        cardPinyin.textContent = "";
+        cardMeaning.textContent = t("Hãy thêm câu mới hoặc đổi bộ lọc / thư mục", "请添加新句子或切换筛选条件/文件夹");
+        cardBackPinyin.textContent = "";
+        cardBackPinyin.classList.add('hidden');
+        cardGrammar.innerHTML = "";
+        cardProgressText.textContent = "0 / 0";
+        cardFolderBadge.innerHTML = `<i class="fa-solid fa-folder text-amber-400 mr-1"></i>${t("Trống", "空")}`;
+        srsNextReviewBadge.textContent = "";
+        return;
+      }
+
+      if (currentIndex >= currentFilteredCards.length) currentIndex = 0;
+      if (currentIndex < 0) currentIndex = currentFilteredCards.length - 1;
+
+      const card = currentFilteredCards[currentIndex];
+      const grammarHtml = card.grammar ? card.grammar.replace(/\n/g, '<br>') : t("Chưa có ghi chú.", "暂无备注。");
+
+      if (cardDirection === 'vi_to_zh') {
+        // Mặt Trước: Tiếng Việt | Mặt Sau: Chữ Hán + Pinyin + Ngữ pháp
+        cardFrontSideBadge.textContent = t("Mặt Trước (Tiếng Việt)", "正面 (越南语)");
+        cardFrontSideBadge.className = "text-xs font-semibold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full";
+        cardHanzi.textContent = card.vi;
+        cardHanzi.className = "text-xl sm:text-2xl font-bold text-slate-800 leading-snug";
+        cardPinyin.textContent = "";
+        cardPinyin.classList.add('hidden');
+        cardFrontHintText.innerHTML = `<i class="fa-solid fa-hand-pointer mr-1"></i> ${t("Bấm để lật xem Chữ Hán, Pinyin & Ngữ pháp", "点击翻转查看汉字、拼音与语法")}`;
+
+        cardBackSideBadge.textContent = t("Mặt Sau (Tiếng Trung & Pinyin)", "背面 (中文与拼音)");
+        cardMeaning.textContent = card.hz;
+        cardMeaning.className = "text-2xl sm:text-3xl font-bold text-emerald-300 tracking-wide";
+        cardBackPinyin.textContent = card.py || "";
+        cardBackPinyin.classList.remove('hidden');
+        cardGrammar.innerHTML = grammarHtml;
+      } else {
+        // Mặc định: Mặt Trước: Tiếng Trung + Pinyin | Mặt Sau: Tiếng Việt + Ngữ pháp
+        cardFrontSideBadge.textContent = t("Mặt Trước (Tiếng Trung)", "正面 (中文)");
+        cardFrontSideBadge.className = "text-xs font-semibold uppercase tracking-wider text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full";
+        cardHanzi.textContent = card.hz;
+        cardHanzi.className = "text-2xl sm:text-3xl font-bold text-slate-800 leading-snug tracking-wide";
+        cardPinyin.textContent = card.py || "";
+        cardPinyin.classList.remove('hidden');
+        cardFrontHintText.innerHTML = `<i class="fa-solid fa-hand-pointer mr-1"></i> ${t("Bấm để lật xem nghĩa & cấu trúc ngữ pháp", "点击翻转查看释义与语法结构")}`;
+
+        cardBackSideBadge.textContent = t("Mặt Sau (Nghĩa & Giải thích)", "背面 (释义与解析)");
+        cardMeaning.textContent = card.vi;
+        cardMeaning.className = "text-xl sm:text-2xl font-bold text-emerald-300";
+        cardBackPinyin.textContent = "";
+        cardBackPinyin.classList.add('hidden');
+        cardGrammar.innerHTML = grammarHtml;
+      }
+
+      applyPinyinBlurStyle();
+
+      cardFolderBadge.innerHTML = `<i class="fa-solid fa-folder text-amber-500 mr-1"></i>${card.folder || DEFAULT_FOLDER}`;
+      srsNextReviewBadge.textContent = formatNextReviewText(card);
+
+      cardProgressText.textContent = `${currentIndex + 1} / ${currentFilteredCards.length}`;
+
+      if (card.status === 'mastered') {
+        levelBadge.textContent = t("Đã thuộc", "已掌握");
+        levelBadge.className = "text-xs px-2 py-0.5 rounded font-medium bg-emerald-100 text-emerald-700";
+      } else if (card.status === 'hard') {
+        levelBadge.textContent = t("Chưa nhớ", "未记住");
+        levelBadge.className = "text-xs px-2 py-0.5 rounded font-medium bg-rose-100 text-rose-700";
+      } else if (card.status === 'learning') {
+        levelBadge.textContent = t("Đang ôn", "学习中");
+        levelBadge.className = "text-xs px-2 py-0.5 rounded font-medium bg-amber-100 text-amber-700";
+      } else {
+        levelBadge.textContent = t("Mới học", "新卡片");
+        levelBadge.className = "text-xs px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-600";
+      }
+
+      // Cập nhật gợi ý số ngày ôn tiếp theo trên nút Bình thường / Đã nhớ
+      const prevIv = card.intervalDays || 0;
+      const nextGoodIv = prevIv < 1 ? 1 : Math.min(30, Math.round(prevIv * 2));
+      const nextEasyIv = prevIv < 3 ? 3 : Math.min(90, Math.round(prevIv * 2.2));
+      document.getElementById('btnGoodSubtext').textContent = t(`Ôn sau ${nextGoodIv} ngày`, `${nextGoodIv} 天后复习`);
+      document.getElementById('btnEasySubtext').textContent = t(`Ôn sau ${nextEasyIv} ngày`, `${nextEasyIv} 天后复习`);
+
+      // Luôn đặt về mặt trước khi chuyển sang thẻ mới
+      if (isFlipped) {
+        cardInner.classList.remove('rotate-y-180');
+        isFlipped = false;
+      }
+
+      // Tự động phát âm khi ở mặt Tiếng Trung (Chỉ đọc ở mặt trước nếu chiều là Trung -> Việt)
+      const isStudyTabVisible = !document.getElementById('viewFlashcards').classList.contains('hidden');
+      if (shouldAutoSpeak && autoSpeakFront && cardDirection === 'zh_to_vi' && !isFlipped && isStudyTabVisible) {
+        speakChinese(card.hz, 0.85);
+      }
+    }
+
+    cardContainer.addEventListener('click', () => {
+      isFlipped = !isFlipped;
+      cardInner.classList.toggle('rotate-y-180', isFlipped);
+      if (!currentFilteredCards[currentIndex]) return;
+
+      // Tự động phát âm khi lật tới mặt có chữ Tiếng Trung:
+      // - Chiều Trung -> Việt: mặt Tiếng Trung là Mặt Trước (!isFlipped)
+      // - Chiều Việt -> Trung: mặt Tiếng Trung là Mặt Sau (isFlipped)
+      const isNowOnChineseSide = (cardDirection === 'zh_to_vi' && !isFlipped) || (cardDirection === 'vi_to_zh' && isFlipped);
+      if (autoSpeakFront && isNowOnChineseSide) {
+        speakChinese(currentFilteredCards[currentIndex].hz, 0.85);
+      }
+    });
+
+    document.getElementById('btnNext').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!currentFilteredCards.length) return;
+      currentIndex = (currentIndex + 1) % currentFilteredCards.length;
+      updateCardUI(true);
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!currentFilteredCards.length) return;
+      currentIndex = (currentIndex - 1 + currentFilteredCards.length) % currentFilteredCards.length;
+      updateCardUI(true);
+    });
+
+    async function markCurrentCardSRS(rating) {
+      const card = currentFilteredCards[currentIndex];
+      if (!card) return;
+      applySrsReviewResult(card, rating);
+      await upsertCardToCloud(card);
+      currentIndex = (currentIndex + 1) % Math.max(1, currentFilteredCards.length);
+      applyFilter(true);
+    }
+
+    document.getElementById('btnHard').addEventListener('click', () => markCurrentCardSRS('hard'));
+    document.getElementById('btnGood').addEventListener('click', () => markCurrentCardSRS('good'));
+    document.getElementById('btnEasy').addEventListener('click', () => markCurrentCardSRS('easy'));
+
+    document.getElementById('btnSpeak').addEventListener('click', () => {
+      const card = currentFilteredCards[currentIndex];
+      if (!card) return;
+      speakChinese(card.hz, 0.85);
+    });
+
+    document.getElementById('btnReloadCloud').addEventListener('click', () => {
+      loadCardsFromCloud();
+    });
+
+    studyFolderSelect.addEventListener('change', () => {
+      currentIndex = 0;
+      applyFilter(true);
+    });
+
+    filterSelect.addEventListener('change', () => {
+      currentIndex = 0;
+      applyFilter(true);
+    });
+
+    // Nút hành động nhanh trên thanh SRS Banner
+    document.getElementById('btnStudySrsNow').addEventListener('click', () => {
+      const dueCount = cards.filter(isCardDueForSRS).length;
+      if (dueCount === 0) {
+        alert("Tuyệt vời! Hiện tại bạn chưa có câu nào quá hạn hoặc cần ôn gấp. Hệ thống sẽ hiển thị tất cả các câu.");
+        filterSelect.value = 'all';
+      } else {
+        studyFolderSelect.value = 'all';
+        filterSelect.value = 'srs_due';
+      }
+      currentIndex = 0;
+      applyFilter(true);
+    });
+
+    document.getElementById('btnQuizSrsNow').addEventListener('click', () => {
+      document.getElementById('quizSourceFilter').value = 'srs_priority';
+      switchTab(btnQuizMode, viewQuiz);
+      initDailyQuiz();
+    });
+
+    // Tab switcher
+    const viewFlashcards = document.getElementById('viewFlashcards');
+    const viewQuiz = document.getElementById('viewQuiz');
+    const viewList = document.getElementById('viewList');
+    const btnStudyMode = document.getElementById('btnStudyMode');
+    const btnQuizMode = document.getElementById('btnQuizMode');
+    const btnListMode = document.getElementById('btnListMode');
+
+    function switchTab(activeBtn, activeView) {
+      [btnStudyMode, btnQuizMode, btnListMode].forEach(b => {
+        b.className = "px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold text-sm hover:bg-indigo-400 transition";
+      });
+      activeBtn.className = "px-3 py-1.5 rounded-lg bg-white text-indigo-600 font-semibold text-sm shadow hover:bg-indigo-50 transition";
+
+      viewFlashcards.classList.add('hidden');
+      viewQuiz.classList.add('hidden');
+      viewList.classList.add('hidden');
+
+      activeView.classList.remove('hidden');
+    }
+
+    btnStudyMode.addEventListener('click', () => {
+      switchTab(btnStudyMode, viewFlashcards);
+      updateCardUI(true);
+    });
+    btnQuizMode.addEventListener('click', () => {
+      switchTab(btnQuizMode, viewQuiz);
+      refreshAllFolderSelectors();
+      initDailyQuiz();
+    });
+    btnListMode.addEventListener('click', () => {
+      switchTab(btnListMode, viewList);
+      refreshAllFolderSelectors();
+      renderList();
+    });
+
+    // =========================================================================
+    // MODAL 1: THÊM 1 CÂU MỚI (CÓ CHỌN/TẠO THƯ MỤC + TỰ ĐỘNG ĐIỀN AI)
+    // =========================================================================
+    const modalAddCard = document.getElementById('modalAddCard');
+    const inputHz = document.getElementById('inputHz');
+    const inputPy = document.getElementById('inputPy');
+    const inputVi = document.getElementById('inputVi');
+    const inputGrammar = document.getElementById('inputGrammar');
+    const btnAutoFillSingle = document.getElementById('btnAutoFillSingle');
+
+    document.getElementById('btnOpenAddModal').addEventListener('click', () => {
+      refreshAllFolderSelectors();
+      if (studyFolderSelect.value && studyFolderSelect.value !== 'all') {
+        inputCardFolderSelect.value = studyFolderSelect.value;
+      }
+      modalAddCard.classList.remove('hidden');
+      inputHz.focus();
+    });
+
+    function closeModal() {
+      modalAddCard.classList.add('hidden');
+      inputHz.value = '';
+      inputPy.value = '';
+      inputVi.value = '';
+      inputGrammar.value = '';
+    }
+
+    document.getElementById('btnCloseModal').addEventListener('click', closeModal);
+    document.getElementById('btnCancelAdd').addEventListener('click', closeModal);
+
+    inputHz.addEventListener('input', () => {
+      const hz = inputHz.value.trim();
+      inputPy.value = hz ? generateLocalPinyin(hz) : '';
+    });
+
+    btnAutoFillSingle.addEventListener('click', async () => {
+      const hz = inputHz.value.trim();
+      if (!hz) {
+        alert("Vui lòng nhập câu chữ Hán trước!");
+        inputHz.focus();
+        return;
+      }
+      const origHtml = btnAutoFillSingle.innerHTML;
+      btnAutoFillSingle.disabled = true;
+      btnAutoFillSingle.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích...`;
+      try {
+        const [analyzed] = await analyzeChineseSentencesWithAI([hz]);
+        if (analyzed) {
+          inputPy.value = analyzed.py || generateLocalPinyin(hz);
+          inputVi.value = analyzed.vi || '';
+          inputGrammar.value = analyzed.grammar || '';
+        }
+      } catch (err) {
+        alert("Lỗi khi phân tích câu: " + err.message);
+      } finally {
+        btnAutoFillSingle.disabled = false;
+        btnAutoFillSingle.innerHTML = origHtml;
+      }
+    });
+
+    document.getElementById('btnSaveCard').addEventListener('click', async () => {
+      const hz = inputHz.value.trim();
+      let py = inputPy.value.trim();
+      let vi = inputVi.value.trim();
+      let grammar = inputGrammar.value.trim();
+      const folder = inputCardFolderSelect.value || DEFAULT_FOLDER;
+
+      if (!hz) {
+        alert("Vui lòng nhập câu Chữ Hán!");
+        return;
+      }
+
+      const btnSave = document.getElementById('btnSaveCard');
+      const origText = btnSave.textContent;
+      if (!vi || !py) {
+        btnSave.disabled = true;
+        btnSave.textContent = "Đang tự điền nghĩa...";
+        try {
+          const [analyzed] = await analyzeChineseSentencesWithAI([hz]);
+          if (analyzed) {
+            py = py || analyzed.py || generateLocalPinyin(hz);
+            vi = vi || analyzed.vi || "Chưa có nghĩa";
+            grammar = grammar || analyzed.grammar || "• Từ mới tự bổ sung";
+          }
+        } catch {
+          py = py || generateLocalPinyin(hz);
+          vi = vi || "Chưa có nghĩa";
+        } finally {
+          btnSave.disabled = false;
+          btnSave.textContent = origText;
+        }
+      }
+
+      const newCard = {
+        id: Date.now(),
+        hz,
+        py,
+        vi,
+        grammar: grammar ? (grammar.startsWith('•') ? grammar : `• ${grammar}`) : "• Từ mới tự bổ sung",
+        folder,
+        status: 'new',
+        reviews: 0,
+        nextReview: 0,
+        intervalDays: 0,
+        wrongCount: 0,
+        lastReviewed: 0
+      };
+
+      cards.unshift(newCard);
+      refreshAllFolderSelectors();
+      studyFolderSelect.value = folder;
+      filterSelect.value = 'all';
+      currentIndex = 0;
+      applyFilter(true);
+      closeModal();
+      switchTab(btnStudyMode, viewFlashcards);
+      await upsertCardToCloud(newCard);
+    });
+
+    // =========================================================================
+    // MODAL 2: IMPORT HÀNG LOẠT CHỈ CẦN CHỮ HÁN (CÓ CHỌN/TẠO THƯ MỤC)
+    // =========================================================================
+    const modalBulkImport = document.getElementById('modalBulkImport');
+    const bulkInputHz = document.getElementById('bulkInputHz');
+    const btnAnalyzeBulk = document.getElementById('btnAnalyzeBulk');
+    const bulkPreviewContainer = document.getElementById('bulkPreviewContainer');
+    const bulkPreviewList = document.getElementById('bulkPreviewList');
+    const bulkPreviewCount = document.getElementById('bulkPreviewCount');
+    const btnSaveBulk = document.getElementById('btnSaveBulk');
+    const bulkStatusText = document.getElementById('bulkStatusText');
+    let generatedBulkCards = [];
+
+    document.getElementById('btnOpenBulkModal').addEventListener('click', () => {
+      refreshAllFolderSelectors();
+      if (studyFolderSelect.value && studyFolderSelect.value !== 'all') {
+        bulkFolderSelect.value = studyFolderSelect.value;
+      }
+      modalBulkImport.classList.remove('hidden');
+      bulkInputHz.focus();
+    });
+
+    function closeBulkModal() {
+      modalBulkImport.classList.add('hidden');
+      bulkInputHz.value = '';
+      generatedBulkCards = [];
+      bulkPreviewContainer.classList.add('hidden');
+      btnSaveBulk.disabled = true;
+    }
+
+    document.getElementById('btnCloseBulkModal').addEventListener('click', closeBulkModal);
+    document.getElementById('btnCancelBulk').addEventListener('click', closeBulkModal);
+
+    btnAnalyzeBulk.addEventListener('click', async () => {
+      const lines = bulkInputHz.value
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+
+      if (lines.length === 0) {
+        alert("Vui lòng nhập ít nhất 1 câu tiếng Trung!");
+        return;
+      }
+
+      btnAnalyzeBulk.disabled = true;
+      const origHtml = btnAnalyzeBulk.innerHTML;
+      btnAnalyzeBulk.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích ${lines.length} câu...`;
+      bulkStatusText.textContent = "Đang tạo Pinyin, dịch nghĩa tiếng Việt và phân tích ngữ pháp...";
+
+      try {
+        const analyzedList = await analyzeChineseSentencesWithAI(lines);
+        const now = Date.now();
+        const selectedFolder = bulkFolderSelect.value || DEFAULT_FOLDER;
+        generatedBulkCards = analyzedList.map((item, idx) => ({
+          id: now + idx,
+          hz: item.hz || lines[idx],
+          py: item.py || generateLocalPinyin(item.hz || lines[idx]),
+          vi: item.vi || "",
+          grammar: item.grammar || "• Từ mới tự bổ sung",
+          folder: selectedFolder,
+          status: 'new',
+          reviews: 0,
+          nextReview: 0,
+          intervalDays: 0,
+          wrongCount: 0,
+          lastReviewed: 0
+        }));
+
+        bulkPreviewCount.textContent = generatedBulkCards.length;
+        bulkPreviewList.innerHTML = generatedBulkCards.map((c, i) => `
+          <div class="p-3 text-xs space-y-1 bg-white">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-400">#${i + 1}</span>
+                <span class="font-bold text-sm text-slate-800">${c.hz}</span>
+                <span class="font-mono text-indigo-600">${c.py}</span>
+              </div>
+              <span class="text-[11px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">📁 ${selectedFolder}</span>
+            </div>
+            <div class="text-emerald-700 font-semibold">${c.vi}</div>
+            <div class="text-slate-500">${c.grammar}</div>
+          </div>
+        `).join('');
+
+        bulkPreviewContainer.classList.remove('hidden');
+        btnSaveBulk.disabled = false;
+        bulkStatusText.textContent = `Đã phân tích xong ${generatedBulkCards.length} câu! Hãy kiểm tra và bấm "Lưu tất cả vào bộ thẻ".`;
+      } catch (err) {
+        alert("Lỗi khi phân tích: " + err.message);
+        bulkStatusText.textContent = "Có lỗi xảy ra: " + err.message;
+      } finally {
+        btnAnalyzeBulk.disabled = false;
+        btnAnalyzeBulk.innerHTML = origHtml;
+      }
+    });
+
+    btnSaveBulk.addEventListener('click', async () => {
+      if (generatedBulkCards.length === 0) return;
+      const targetFolder = bulkFolderSelect.value || DEFAULT_FOLDER;
+      generatedBulkCards.forEach(c => { c.folder = targetFolder; });
+
+      btnSaveBulk.disabled = true;
+      btnSaveBulk.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang lưu...`;
+
+      cards = [...generatedBulkCards, ...cards];
+      refreshAllFolderSelectors();
+      studyFolderSelect.value = targetFolder;
+      filterSelect.value = 'all';
+      currentIndex = 0;
+      applyFilter(true);
+      await upsertMultipleCardsToCloud(generatedBulkCards);
+
+      const count = generatedBulkCards.length;
+      btnSaveBulk.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1"></i> Lưu tất cả vào bộ thẻ`;
+      closeBulkModal();
+      switchTab(btnStudyMode, viewFlashcards);
+      alert(`Đã thêm thành công ${count} câu mới vào thư mục "${targetFolder}"!`);
+    });
+
+    // =========================================================================
+    // MODAL 3: CẤU HÌNH AI & ĐỒNG BỘ CLOUD (CHỈ OWNER / ADMIN, KHÔNG LỘ KEY TRÊN DOM)
+    // =========================================================================
+    const modalSettings = document.getElementById('modalSettings');
+    const cfgOpenRouterKey = document.getElementById('cfgOpenRouterKey');
+    const cfgOpenRouterModel = document.getElementById('cfgOpenRouterModel');
+
+    function isCurrentUserAdminOrOwner() {
+      return Boolean(currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
+    }
+
+    document.getElementById('btnOpenSettings').addEventListener('click', () => {
+      if (!isCurrentUserAdminOrOwner()) {
+        alert(t(
+          "Chỉ tài khoản Chủ sở hữu (Owner / Admin) mới có quyền xem và chỉnh sửa cấu hình!",
+          "仅所有者 (Owner / Admin) 账户有权查看和修改配置！"
+        ));
+        return;
+      }
+      const cfg = getConfig();
+      // Tuyệt đối không đổ ngược API Key ra value của thẻ <input> để tránh lộ khi Inspect Element
+      cfgOpenRouterKey.value = '';
+      cfgOpenRouterKey.placeholder = cfg.openRouterKey
+        ? t("Đã lưu Key bảo mật (Chỉ nhập vào đây nếu muốn đổi Key mới)", "已保存安全密钥（仅在需要更换新密钥时输入）")
+        : t("Nhập OpenRouter API Key mới (sk-or-v1-...)", "输入新的 OpenRouter API Key (sk-or-v1-...)");
+      cfgOpenRouterModel.value = cfg.openRouterModel;
+      modalSettings.classList.remove('hidden');
+    });
+
+    function closeSettings() {
+      modalSettings.classList.add('hidden');
+    }
+
+    document.getElementById('btnCloseSettings').addEventListener('click', closeSettings);
+    document.getElementById('btnCancelSettings').addEventListener('click', closeSettings);
+
+    document.getElementById('btnSaveSettings').addEventListener('click', async () => {
+      if (!isCurrentUserAdminOrOwner()) {
+        alert(t("Chỉ tài khoản Chủ sở hữu (Owner / Admin) mới có quyền lưu cấu hình!", "仅所有者账户有权保存设置！"));
+        return;
+      }
+      const newKey = cfgOpenRouterKey.value.trim();
+      const newModel = cfgOpenRouterModel.value.trim() || 'deepseek/deepseek-chat';
+      localStorage.setItem('cfg_openrouter_model', newModel);
+
+      if (newKey) {
+        runtimeOpenRouterKey = newKey;
+        localStorage.setItem('cfg_openrouter_key', newKey);
+        if (currentUser && currentUser.passwordHash && supabaseClient) {
+          const encOrKey = xorCipherHex(newKey, currentUser.passwordHash);
+          currentUser.encOrKey = encOrKey;
+          const newMeta = {
+            role: currentUser.role || 'owner',
+            allowPublicRegister: allowPublicRegistration,
+            createdAt: currentUser.createdAt || Date.now(),
+            encOrKey,
+            orModel: newModel
+          };
+          await supabaseClient
+            .from('flashcards')
+            .update({ grammar: JSON.stringify(newMeta), updated_at: new Date().toISOString() })
+            .eq('id', currentUser.id);
+        }
+      }
+      cfgOpenRouterKey.value = '';
+      closeSettings();
+      await loadCardsFromCloud();
+    });
+
+    document.getElementById('btnPushLocalToCloud').addEventListener('click', async () => {
+      if (!isCurrentUserAdminOrOwner()) {
+        alert(t("Chỉ tài khoản Chủ sở hữu (Owner / Admin) mới có quyền đẩy dữ liệu lên Cloud!", "仅所有者账户有权推送数据至云端！"));
+        return;
+      }
+      await pushAllLocalCardsToCloud(true);
+    });
+
+    // =========================================================================
+    // DANH SÁCH THẺ & LỌC THEO THƯ MỤC / TÌM KIẾM / ĐỔI THƯ MỤC
+    // =========================================================================
+    const searchListInput = document.getElementById('searchListInput');
+    const allCardsTable = document.getElementById('allCardsTable');
+    searchListInput.addEventListener('input', renderList);
+    listFolderSelect.addEventListener('change', renderList);
+
+    function renderList() {
+      const keyword = (searchListInput.value || '').trim().toLowerCase();
+      const folderFilter = listFolderSelect.value || 'all';
+
+      const filtered = cards.filter(c => {
+        const matchFolder = folderFilter === 'all' || (c.folder || DEFAULT_FOLDER) === folderFilter;
+        const matchKeyword = !keyword ||
+          (c.hz && c.hz.toLowerCase().includes(keyword)) ||
+          (c.py && c.py.toLowerCase().includes(keyword)) ||
+          (c.vi && c.vi.toLowerCase().includes(keyword));
+        return matchFolder && matchKeyword;
+      });
+
+      document.getElementById('totalCardCount').textContent = t(
+        `Hiển thị: ${filtered.length} / ${cards.length} câu`,
+        `显示: ${filtered.length} / ${cards.length} 句`
+      );
+      allCardsTable.innerHTML = filtered.map((c, i) => `
+        <div class="p-4 hover:bg-slate-50 flex items-start justify-between gap-4">
+          <div class="space-y-1 flex-1 cursor-pointer" data-card-action="select" data-card-id="${c.id}">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold text-slate-400">#${i + 1}</span>
+              <span class="text-base font-bold text-slate-800">${c.hz}</span>
+              <span class="text-xs font-mono text-indigo-600">${c.py || ''}</span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 font-medium">
+                📁 ${c.folder || DEFAULT_FOLDER}
+              </span>
+            </div>
+            <p class="text-sm text-slate-600 font-medium">${c.vi}</p>
+            <p class="text-xs text-slate-400">${c.grammar || ''}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[11px] text-slate-400 hidden sm:inline">${formatNextReviewText(c)}</span>
+            <span class="text-xs px-2 py-1 rounded font-semibold ${c.status === 'mastered' ? 'bg-emerald-100 text-emerald-700' : (c.status === 'hard' ? 'bg-rose-100 text-rose-700' : (c.status === 'learning' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'))}">
+              ${c.status === 'mastered' ? t('Đã thuộc', '已掌握') : (c.status === 'hard' ? t('Cần ôn', '需复习') : (c.status === 'learning' ? t('Đang ôn', '学习中') : t('Mới', '新卡')))}
+            </span>
+            <button type="button" data-card-action="move" data-card-id="${c.id}" class="text-slate-400 hover:text-amber-600 p-1 text-sm" title="${t('Chuyển sang thư mục khác', '移动至其他文件夹')}">
+              <i class="fa-solid fa-folder"></i>
+            </button>
+            <button type="button" data-card-action="delete" data-card-id="${c.id}" class="text-slate-300 hover:text-rose-500 p-1 text-sm" title="${t('Xóa thẻ', '删除卡片')}">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function moveCardFolderById(id) {
+      if (currentUser && currentUser.role !== 'owner') {
+        alert(t("Chỉ tài khoản Chủ sở hữu (Owner) mới có quyền chuyển thư mục của thẻ chung!", "仅所有者 (Owner) 账户有权移动公共卡片的文件夹！"));
+        return;
+      }
+      const card = cards.find(c => Number(c.id) === Number(id));
+      if (!card) return;
+      const allF = getAllFolders();
+      const chosen = prompt(
+        t(
+          `Nhập tên thư mục muốn chuyển câu "${card.hz}" tới:\n(Các thư mục hiện có: ${allF.join(', ')})`,
+          `输入要将 "${card.hz}" 移动到的文件夹名称:\n(现有文件夹: ${allF.join(', ')})`
+        ),
+        card.folder || DEFAULT_FOLDER
+      );
+      if (!chosen || !chosen.trim()) return;
+      card.folder = chosen.trim();
+      if (!customFolders.includes(card.folder)) customFolders.push(card.folder);
+      refreshAllFolderSelectors();
+      renderList();
+      await upsertCardToCloud(card);
+    }
+
+    async function deleteCardById(id) {
+      if (currentUser && currentUser.role !== 'owner') {
+        alert(t("Chỉ tài khoản Chủ sở hữu (Owner) mới có quyền xóa thẻ khỏi Database!", "仅所有者 (Owner) 账户有权从数据库删除卡片！"));
+        return;
+      }
+      if (confirm(t("Bạn có chắc chắn muốn xóa câu này?", "您确定要删除此句子吗？"))) {
+        cards = cards.filter(c => Number(c.id) !== Number(id));
+        refreshAllFolderSelectors();
+        applyFilter(false);
+        renderList();
+        await deleteCardFromCloud(id);
+      }
+    }
+
+    function selectCardById(id) {
+      studyFolderSelect.value = 'all';
+      filterSelect.value = 'all';
+      currentFilteredCards = [...cards];
+      const idx = currentFilteredCards.findIndex(c => Number(c.id) === Number(id));
+      currentIndex = idx >= 0 ? idx : 0;
+      switchTab(btnStudyMode, viewFlashcards);
+      updateCardUI(true);
+    }
+
+    allCardsTable.addEventListener('click', (e) => {
+      const actionEl = e.target.closest('[data-card-action]');
+      if (!actionEl) return;
+      const action = actionEl.getAttribute('data-card-action');
+      const cardId = Number(actionEl.getAttribute('data-card-id'));
+      if (!cardId) return;
+      if (action === 'move') {
+        e.stopPropagation();
+        moveCardFolderById(cardId);
+      } else if (action === 'delete') {
+        e.stopPropagation();
+        deleteCardById(cardId);
+      } else if (action === 'select') {
+        selectCardById(cardId);
+      }
+    });
+
+    document.getElementById('btnExportJson').addEventListener('click', () => {
+      const cleanCards = cards.map(({ _ownerRoot, _userProgressMap, ...rest }) => rest);
+      const userSuffix = currentUser ? `-${currentUser.username}` : '';
+      const blob = new Blob([JSON.stringify(cleanCards, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `flashcards-backup${userSuffix}-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Nhập bộ thẻ từ file JSON (Giữ nguyên thư mục, tiến độ SRS và đồng bộ thẳng lên Supabase)
+    const inputImportJson = document.getElementById('inputImportJson');
+    document.getElementById('btnImportJson').addEventListener('click', () => {
+      inputImportJson.value = '';
+      inputImportJson.click();
+    });
+
+    inputImportJson.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        const rawList = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.cards) ? parsed.cards : []);
+
+        if (rawList.length === 0) {
+          alert(t("File JSON không hợp lệ hoặc không chứa danh sách thẻ nào!", "JSON 文件无效或不包含任何卡片！"));
+          return;
+        }
+
+        const now = Date.now();
+        const importedCards = rawList
+          .filter(item => item && item.hz && item.vi)
+          .map((item, idx) => unpackCardFromStorage({
+            id: item.id || (now + idx),
+            hz: String(item.hz).trim(),
+            py: item.py ? String(item.py).trim() : generateLocalPinyin(String(item.hz).trim()),
+            vi: String(item.vi).trim(),
+            grammar: item.grammar || "• Từ mới tự bổ sung",
+            folder: item.folder || DEFAULT_FOLDER,
+            status: item.status || 'new',
+            reviews: Number(item.reviews) || 0,
+            nextReview: Number(item.nextReview) || 0,
+            intervalDays: Number(item.intervalDays) || 0,
+            wrongCount: Number(item.wrongCount) || 0,
+            lastReviewed: Number(item.lastReviewed) || 0
+          }));
+
+        if (importedCards.length === 0) {
+          alert(t("Không tìm thấy thẻ hợp lệ (cần có trường 'hz' và 'vi') trong file JSON!", "在 JSON 文件中未找到有效卡片（需包含 'hz' 和 'vi' 字段）！"));
+          return;
+        }
+
+        // Gộp thông minh: nếu trùng id hoặc trùng câu chữ Hán (hz) thì cập nhật theo file JSON vừa nhập, nếu chưa có thì thêm mới
+        const mapById = new Map(cards.map(c => [String(c.id), c]));
+        const mapByHz = new Map(cards.map(c => [c.hz, c]));
+        const updatedOrAdded = [];
+
+        importedCards.forEach(ic => {
+          if (ic.folder && !customFolders.includes(ic.folder)) {
+            customFolders.push(ic.folder);
+          }
+          const existing = mapById.get(String(ic.id)) || mapByHz.get(ic.hz);
+          if (existing) {
+            Object.assign(existing, ic, { id: existing.id });
+            updatedOrAdded.push(existing);
+          } else {
+            cards.unshift(ic);
+            mapById.set(String(ic.id), ic);
+            mapByHz.set(ic.hz, ic);
+            updatedOrAdded.push(ic);
+          }
+        });
+
+        saveToLocalStorage();
+        refreshAllFolderSelectors();
+        applyFilter(false);
+        renderList();
+        await upsertMultipleCardsToCloud(updatedOrAdded);
+
+        alert(t(
+          `Đã nhập thành công ${importedCards.length} thẻ từ file JSON và đồng bộ lên Cloud!`,
+          `已成功从 JSON 导入 ${importedCards.length} 张卡片并同步至云端！`
+        ));
+      } catch (err) {
+        alert(t("Lỗi khi đọc file JSON: ", "读取 JSON 文件出错: ") + err.message);
+      }
+    });
+
+    // =========================================================================
+    // QUIZ ĐA CHẾ ĐỘ + CHỌN THƯ MỤC + LẶP LẠI NGẮT QUÃNG (SRS)
+    // =========================================================================
+    let quizQuestions = [];
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+    let selectedQuizMode = 'zh_to_vi';
+
+    const quizCountSelect = document.getElementById('quizCountSelect');
+    const quizSourceFilter = document.getElementById('quizSourceFilter');
+    const quizModeBtns = document.querySelectorAll('.quiz-mode-btn');
+    const quizTextPrompt = document.getElementById('quizTextPrompt');
+    const quizAudioPrompt = document.getElementById('quizAudioPrompt');
+    const quizListeningReveal = document.getElementById('quizListeningReveal');
+    const quizRevealHanzi = document.getElementById('quizRevealHanzi');
+    const quizRevealPinyin = document.getElementById('quizRevealPinyin');
+    const quizListenHint = document.getElementById('quizListenHint');
+    const quizTypingBox = document.getElementById('quizTypingBox');
+    const quizTypingInput = document.getElementById('quizTypingInput');
+    const btnSubmitTyping = document.getElementById('btnSubmitTyping');
+    const btnQuizPlayNormal = document.getElementById('btnQuizPlayNormal');
+    const btnQuizPlaySlow = document.getElementById('btnQuizPlaySlow');
+
+    quizModeBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedQuizMode = btn.getAttribute('data-quiz-mode');
+        quizModeBtns.forEach(b => {
+          b.className = b.getAttribute('data-quiz-mode') === 'mixed'
+            ? "quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center"
+            : "quiz-mode-btn py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center";
+        });
+        btn.className = (selectedQuizMode === 'mixed' ? "quiz-mode-btn col-span-2 sm:col-span-1 " : "quiz-mode-btn ") +
+          "py-2 px-2 rounded-lg bg-white text-indigo-600 shadow-sm transition text-center";
+        initDailyQuiz();
+      });
+    });
+
+    quizCountSelect.addEventListener('change', initDailyQuiz);
+    quizSourceFilter.addEventListener('change', initDailyQuiz);
+
+    function getQuizPoolBySelectedFoldersAndSRS() {
+      const isAllFolders = selectedQuizFolders.has('all') || selectedQuizFolders.size === 0;
+      let pool = isAllFolders
+        ? [...cards]
+        : cards.filter(c => selectedQuizFolders.has(c.folder || DEFAULT_FOLDER));
+
+      const sourceMode = quizSourceFilter.value || 'all';
+      if (sourceMode === 'srs_only') {
+        const dueOnly = pool.filter(isCardDueForSRS);
+        if (dueOnly.length > 0) {
+          pool = dueOnly.sort((a, b) => getSrsPriorityScore(b) - getSrsPriorityScore(a));
+        }
+      } else if (sourceMode === 'srs_priority') {
+        // Sắp xếp ưu tiên các câu cần ôn SRS lên trước, trộn nhẹ các câu cùng mức điểm
+        pool.sort((a, b) => (getSrsPriorityScore(b) - getSrsPriorityScore(a)) || (0.5 - Math.random()));
+      } else {
+        pool.sort(() => 0.5 - Math.random());
+      }
+      return pool;
+    }
+
+    function initDailyQuiz() {
+      const pool = getQuizPoolBySelectedFoldersAndSRS();
+      const totalCount = Math.min(parseInt(quizCountSelect.value, 10) || 5, pool.length);
+      const allModes = ['zh_to_vi', 'vi_to_zh', 'listen_choice', 'listen_type'];
+
+      quizQuestions = pool.slice(0, totalCount).map(item => {
+        const mode = selectedQuizMode === 'mixed'
+          ? allModes[Math.floor(Math.random() * allModes.length)]
+          : selectedQuizMode;
+
+        const wrongs = cards.filter(c => c.id !== item.id).sort(() => 0.5 - Math.random()).slice(0, 3);
+
+        if (mode === 'vi_to_zh') {
+          const optionCards = [...wrongs, item].sort(() => 0.5 - Math.random());
+          return { mode, item, correctId: item.id, optionCards };
+        } else {
+          const options = [...wrongs.map(w => w.vi), item.vi].sort(() => 0.5 - Math.random());
+          return { mode, item, correct: item.vi, options };
+        }
+      });
+
+      currentQuizIndex = 0;
+      quizScore = 0;
+      renderQuizQuestion();
+    }
+
+    function renderQuizQuestion() {
+      const fBack = document.getElementById('quizFeedback');
+      fBack.className = "hidden";
+      document.getElementById('btnNextQuiz').classList.add('hidden');
+      document.getElementById('btnRestartQuiz').classList.add('hidden');
+      const totalQ = quizQuestions.length;
+
+      if (totalQ === 0) {
+        document.getElementById('quizScoreBadge').textContent = `0 / 0`;
+        document.getElementById('quizQuestion').textContent = t(`Không có câu hỏi nào trong thư mục đã chọn!`, `所选文件夹中没有题目！`);
+        document.getElementById('quizPromptBox').classList.add('hidden');
+        quizTypingBox.classList.add('hidden');
+        document.getElementById('quizOptions').innerHTML = '';
+        return;
+      }
+
+      if (currentQuizIndex >= totalQ) {
+        document.getElementById('quizScoreBadge').textContent = t(`Hoàn thành!`, `已完成！`);
+        document.getElementById('quizQuestion').textContent = t(
+          `Kết quả của bạn: ${quizScore} / ${totalQ} câu chính xác! 🎉`,
+          `您的测验成绩: ${quizScore} / ${totalQ} 题正确！🎉`
+        );
+        document.getElementById('quizPromptBox').classList.add('hidden');
+        quizTypingBox.classList.add('hidden');
+        document.getElementById('quizOptions').innerHTML = `
+          <div class="text-center py-6">
+            <p class="text-slate-600 text-sm mb-2">${t(`Bạn đã hoàn thành lượt luyện tập ${totalQ} câu hỏi!`, `您已完成 ${totalQ} 道题目的练习！`)}</p>
+            <p class="text-xs text-slate-400">${t(`Những câu trả lời sai đã được hệ thống tự động đưa vào danh sách Cần ôn hôm nay (SRS).`, `答错的题目已自动加入“今日待复习 (SRS)”列表。`)}</p>
+          </div>
+        `;
+        document.getElementById('btnRestartQuiz').classList.remove('hidden');
+        updateStatsSummary();
+        return;
+      }
+
+      const q = quizQuestions[currentQuizIndex];
+      document.getElementById('quizScoreBadge').textContent = `${t('Câu', '第')} ${currentQuizIndex + 1} / ${totalQ} • 📁 ${q.item.folder || DEFAULT_FOLDER}`;
+      document.getElementById('quizPromptBox').classList.remove('hidden');
+
+      const optsContainer = document.getElementById('quizOptions');
+      optsContainer.innerHTML = '';
+      quizTypingBox.classList.add('hidden');
+      quizListeningReveal.classList.add('hidden');
+      quizListenHint.classList.remove('hidden');
+
+      if (q.mode === 'zh_to_vi') {
+        document.getElementById('quizQuestion').textContent = t(
+          "🇨🇳 ➔ 🇻🇳 Chọn nghĩa tiếng Việt đúng của câu sau:",
+          "🇨🇳 ➔ 🇻🇳 请选择下列中文句子的正确越南语意思:"
+        );
+        quizTextPrompt.classList.remove('hidden');
+        quizAudioPrompt.classList.add('hidden');
+        document.getElementById('quizTargetHanzi').textContent = q.item.hz;
+        document.getElementById('quizTargetHanzi').className = "text-2xl font-bold text-indigo-700";
+        document.getElementById('quizTargetPinyin').textContent = q.item.py || '';
+
+        q.options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = "text-left p-3.5 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition font-medium text-sm text-slate-700";
+          btn.textContent = opt;
+          btn.onclick = () => handleChoiceAnswer(opt === q.correct, btn, q);
+          optsContainer.appendChild(btn);
+        });
+
+      } else if (q.mode === 'vi_to_zh') {
+        document.getElementById('quizQuestion').textContent = t(
+          "🇻🇳 ➔ 🇨🇳 Chọn câu tiếng Trung (kèm Pinyin) tương ứng với nghĩa sau:",
+          "🇻🇳 ➔ 🇨🇳 请选择与下列越南语意思对应的中文句子（含拼音）:"
+        );
+        quizTextPrompt.classList.remove('hidden');
+        quizAudioPrompt.classList.add('hidden');
+        document.getElementById('quizTargetHanzi').textContent = q.item.vi;
+        document.getElementById('quizTargetHanzi').className = "text-xl sm:text-2xl font-bold text-emerald-700";
+        document.getElementById('quizTargetPinyin').textContent = t("Hãy chọn đáp án chữ Hán + Pinyin đúng bên dưới", "请在下方选择正确的汉字+拼音答案");
+
+        q.optionCards.forEach(optCard => {
+          const btn = document.createElement('button');
+          btn.dataset.cardId = optCard.id;
+          btn.className = "text-left p-3.5 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition text-slate-800 space-y-0.5";
+          btn.innerHTML = `
+            <div class="font-bold text-base sm:text-lg text-slate-800">${optCard.hz}</div>
+            <div class="text-xs font-mono text-indigo-600">${optCard.py || ''}</div>
+          `;
+          btn.onclick = () => {
+            speakChinese(optCard.hz, 0.85);
+            handleChoiceAnswer(optCard.id === q.correctId, btn, q);
+          };
+          optsContainer.appendChild(btn);
+        });
+
+      } else if (q.mode === 'listen_choice') {
+        document.getElementById('quizQuestion').textContent = t(
+          "🎧 Nghe câu tiếng Trung và chọn nghĩa tiếng Việt đúng:",
+          "🎧 听中文句子并选择正确的越南语意思:"
+        );
+        quizTextPrompt.classList.add('hidden');
+        quizAudioPrompt.classList.remove('hidden');
+        quizRevealHanzi.textContent = q.item.hz;
+        quizRevealPinyin.textContent = q.item.py || '';
+
+        btnQuizPlayNormal.onclick = () => speakChinese(q.item.hz, 0.85);
+        btnQuizPlaySlow.onclick = () => speakChinese(q.item.hz, 0.55);
+        setTimeout(() => speakChinese(q.item.hz, 0.85), 150);
+
+        q.options.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = "text-left p-3.5 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition font-medium text-sm text-slate-700";
+          btn.textContent = opt;
+          btn.onclick = () => handleChoiceAnswer(opt === q.correct, btn, q);
+          optsContainer.appendChild(btn);
+        });
+
+      } else if (q.mode === 'listen_type') {
+        document.getElementById('quizQuestion').textContent = t(
+          "✍️ Nghe câu tiếng Trung và gõ lại nghĩa tiếng Việt:",
+          "✍️ 听中文句子并输入越南语意思:"
+        );
+        quizTextPrompt.classList.add('hidden');
+        quizAudioPrompt.classList.remove('hidden');
+        quizTypingBox.classList.remove('hidden');
+        quizRevealHanzi.textContent = q.item.hz;
+        quizRevealPinyin.textContent = q.item.py || '';
+
+        quizTypingInput.value = '';
+        quizTypingInput.disabled = false;
+        btnSubmitTyping.disabled = false;
+        btnSubmitTyping.innerHTML = `<i class="fa-solid fa-check"></i> <span>${t('Kiểm tra', '提交')}</span>`;
+
+        btnQuizPlayNormal.onclick = () => speakChinese(q.item.hz, 0.85);
+        btnQuizPlaySlow.onclick = () => speakChinese(q.item.hz, 0.55);
+        setTimeout(() => {
+          speakChinese(q.item.hz, 0.85);
+          quizTypingInput.focus();
+        }, 150);
+      }
+    }
+
+    async function handleChoiceAnswer(isCorrect, selectedBtn, q) {
+      const allButtons = document.querySelectorAll('#quizOptions button');
+      allButtons.forEach(b => b.disabled = true);
+      const fBack = document.getElementById('quizFeedback');
+      fBack.classList.remove('hidden');
+
+      if (q.mode === 'listen_choice') {
+        quizListenHint.classList.add('hidden');
+        quizListeningReveal.classList.remove('hidden');
+      }
+
+      // Cập nhật lịch Lặp lại ngắt quãng (SRS) dựa trên kết quả trả lời
+      applySrsReviewResult(q.item, isCorrect ? 'easy' : 'hard');
+      upsertCardToCloud(q.item);
+
+      if (isCorrect) {
+        quizScore++;
+        selectedBtn.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-800');
+        fBack.className = "p-3.5 rounded-xl text-sm font-medium bg-emerald-50 text-emerald-800 border border-emerald-200";
+        fBack.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> <b>${t('Chính xác!', '回答正确！')}</b> (${formatNextReviewText(q.item)})<br><span class="text-xs text-emerald-700">${q.item.hz} (${q.item.py || ''}) — ${q.item.vi}</span><br><span class="text-xs text-slate-600">${q.item.grammar || ''}</span>`;
+      } else {
+        selectedBtn.classList.add('bg-rose-100', 'border-rose-500', 'text-rose-800');
+        allButtons.forEach(b => {
+          if (q.mode === 'vi_to_zh') {
+            if (String(b.dataset.cardId) === String(q.correctId)) {
+              b.classList.add('bg-emerald-50', 'border-emerald-400', 'text-emerald-800');
+            }
+          } else if (b.textContent === q.correct) {
+            b.classList.add('bg-emerald-50', 'border-emerald-400', 'text-emerald-800');
+          }
+        });
+        const correctDisplay = q.mode === 'vi_to_zh'
+          ? `${q.item.hz} (${q.item.py || ''})`
+          : q.item.vi;
+        fBack.className = "p-3.5 rounded-xl text-sm font-medium bg-rose-50 text-rose-800 border border-rose-200";
+        fBack.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> <b>${t('Chưa đúng!', '回答错误！')}</b> ${t('Đã đưa vào danh sách Cần ôn lại (SRS).', '已加入待复习 (SRS) 列表。')}<br>${t('Đáp án đúng', '正确答案')}: <b>"${correctDisplay}"</b>.<br><span class="text-xs text-rose-600">${q.item.grammar || ''}</span>`;
+      }
+      document.getElementById('btnNextQuiz').classList.remove('hidden');
+    }
+
+    // =========================================================================
+    // CHẤM ĐIỂM NGHE CHÉP TIẾNG VIỆT (CHẤP NHẬN TỪ ĐỒNG NGHĨA LOCAL + AI)
+    // =========================================================================
+    function normalizeViText(str) {
+      if (!str) return "";
+      let s = str.toLowerCase().trim();
+      s = s.replace(/[.,?!;:"'()[\]…\-–—/\\]/g, ' ');
+      const synonymGroups = [
+        [/\b(bình thường|thông thường|thường ngày)\b/g, 'thường'],
+        [/\b(thường xuyên|hay)\b/g, 'thường'],
+        [/\b(rảnh rỗi|có thời gian rảnh|có thời gian)\b/g, 'rảnh'],
+        [/\b(chẳng hạn như|ví dụ như là|ví dụ như|chẳng hạn|ví dụ)\b/g, 'vídụ'],
+        [/\b(này nọ|các thứ|các kiểu|vân vân)\b/g, 'nàynọ'],
+        [/\b(mình|tớ|anh|em)\b/g, 'tôi'],
+        [/\b(cậu|anh ấy|cô ấy)\b/g, 'bạn'],
+        [/\b(cảm thấy|thấy rằng)\b/g, 'thấy'],
+        [/\b(vô cùng|cực kỳ|rất là)\b/g, 'rất'],
+        [/\b(khi nào|lúc nào|bao giờ)\b/g, 'khinào'],
+        [/\b(khi|lúc)\b/g, 'lúc'],
+        [/\b(đi dạo bộ|dạo bộ|đi bộ dạo)\b/g, 'đidạo'],
+        [/\b(khiêu vũ|nhảy múa)\b/g, 'nhảy'],
+        [/\b(bơi lội)\b/g, 'bơi'],
+        [/\b(thể thao vận động|vận động|tập thể thao)\b/g, 'thểthao'],
+        [/\b(phim truyền hình|phim bộ)\b/g, 'phimtruyềnhình'],
+        [/\b(phim điện ảnh|phim chiếu rạp)\b/g, 'phimđiệnảnh'],
+        [/\b(thú cưng|động vật)\b/g, 'độngvật'],
+        [/\b(quyển|cuốn)\b/g, 'cuốn'],
+        [/\b(hơi khó một chút|hơi khó chút|hơi khó)\b/g, 'hơikhó'],
+        [/\b(thoải mái dễ chịu|dễ chịu)\b/g, 'thoảimái'],
+        [/\b(thế|vậy|nhỉ|à|nhé|không)\b/g, '']
+      ];
+      synonymGroups.forEach(([regex, replacement]) => {
+        s = s.replace(regex, replacement);
+      });
+      return s.replace(/\s+/g, ' ').trim();
+    }
+
+    function checkLocalSynonymMatch(userVi, targetVi) {
+      const normUser = normalizeViText(userVi);
+      const normTarget = normalizeViText(targetVi);
+      if (!normUser) return false;
+      if (normUser === normTarget) return true;
+      if (normTarget.includes(normUser) && normUser.length >= normTarget.length * 0.7) return true;
+
+      const userWords = normUser.split(' ').filter(Boolean);
+      const targetWords = normTarget.split(' ').filter(Boolean);
+      if (targetWords.length === 0) return false;
+
+      const matched = targetWords.filter(w => userWords.includes(w)).length;
+      const recall = matched / targetWords.length;
+      const precision = matched / Math.max(1, userWords.length);
+      const f1 = (recall + precision) > 0 ? (2 * recall * precision) / (recall + precision) : 0;
+      return f1 >= 0.75;
+    }
+
+    async function evaluateVietnameseAnswer(userVi, cardItem) {
+      if (checkLocalSynonymMatch(userVi, cardItem.vi)) {
+        return { isCorrect: true, note: t("Khớp ý nghĩa với đáp án gốc!", "与原答案意思一致！") };
+      }
+
+      const { openRouterKey, openRouterModel } = getConfig();
+      if (openRouterKey) {
+        try {
+          const prompt = `Bạn là giáo viên chấm bài dịch tiếng Trung sang tiếng Việt.
+Câu gốc tiếng Trung: "${cardItem.hz}"
+Nghĩa tiếng Việt chuẩn: "${cardItem.vi}"
+Câu học viên dịch: "${userVi}"
+
+Yêu cầu: Chấp nhận từ đồng nghĩa, đại từ xưng hô tương đương (tôi/mình/tớ, bạn/cậu...), hoặc cách diễn đạt khác nhưng ĐÚNG Ý NGHĨA chính của câu gốc.
+Chỉ trả về JSON hợp lệ (không giải thích ngoài JSON):
+{
+  "isCorrect": true,
+  "note": "Giải thích ngắn gọn 1 câu vì sao đúng (nhận diện từ đồng nghĩa) hoặc chỉ ra chỗ dịch sai"
+}`;
+          const parsed = await callOpenRouterJson(prompt, openRouterKey, openRouterModel);
+          if (parsed && typeof parsed.isCorrect === 'boolean') {
+            return parsed;
+          }
+        } catch (err) {
+          console.warn("OpenRouter grading fallback:", err);
+        }
+      }
+
+      return { isCorrect: false, note: t("Chưa khớp nghĩa với câu gốc.", "与原句意思尚不匹配。") };
+    }
+
+    async function handleTypingSubmit() {
+      const q = quizQuestions[currentQuizIndex];
+      if (!q || q.mode !== 'listen_type') return;
+      const userAnswer = quizTypingInput.value.trim();
+      if (!userAnswer) {
+        alert(t("Vui lòng nhập nghĩa tiếng Việt bạn nghe được!", "请输入您听到的越南语意思！"));
+        quizTypingInput.focus();
+        return;
+      }
+
+      quizTypingInput.disabled = true;
+      btnSubmitTyping.disabled = true;
+      btnSubmitTyping.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('Đang chấm...', '评判中...')}`;
+
+      const evalResult = await evaluateVietnameseAnswer(userAnswer, q.item);
+
+      // Cập nhật lịch Lặp lại ngắt quãng (SRS)
+      applySrsReviewResult(q.item, evalResult.isCorrect ? 'easy' : 'hard');
+      upsertCardToCloud(q.item);
+
+      quizListenHint.classList.add('hidden');
+      quizListeningReveal.classList.remove('hidden');
+
+      const fBack = document.getElementById('quizFeedback');
+      fBack.classList.remove('hidden');
+
+      if (evalResult.isCorrect) {
+        quizScore++;
+        fBack.className = "p-3.5 rounded-xl text-sm font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 space-y-1";
+        fBack.innerHTML = `
+          <div><i class="fa-solid fa-circle-check mr-1"></i> <b>${t('Chính xác!', '回答正确！')}</b> ${evalResult.note || ''} (${formatNextReviewText(q.item)})</div>
+          <div class="text-xs text-emerald-700"><b>${t('Đáp án gốc:', '原答案:')}</b> "${q.item.vi}"</div>
+          <div class="text-xs text-slate-600">${q.item.grammar || ''}</div>
+        `;
+      } else {
+        fBack.className = "p-3.5 rounded-xl text-sm font-medium bg-rose-50 text-rose-800 border border-rose-200 space-y-1";
+        fBack.innerHTML = `
+          <div><i class="fa-solid fa-circle-xmark mr-1"></i> <b>${t('Chưa chính xác!', '回答错误！')}</b> ${evalResult.note || ''} (${t('Đã đưa vào danh sách Cần ôn SRS', '已加入 SRS 待复习列表')})</div>
+          <div class="text-xs text-rose-700"><b>${t('Đáp án chuẩn:', '标准答案:')}</b> "${q.item.vi}"</div>
+          <div class="text-xs text-slate-600">${q.item.grammar || ''}</div>
+        `;
+      }
+
+      btnSubmitTyping.innerHTML = `<i class="fa-solid fa-check"></i> ${t('Đã kiểm tra', '已评判')}`;
+      document.getElementById('btnNextQuiz').classList.remove('hidden');
+      document.getElementById('btnNextQuiz').focus();
+    }
+
+    btnSubmitTyping.addEventListener('click', handleTypingSubmit);
+    quizTypingInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleTypingSubmit();
+      }
+    });
+
+    document.getElementById('btnNextQuiz').addEventListener('click', () => {
+      currentQuizIndex++;
+      renderQuizQuestion();
+    });
+
+    document.getElementById('btnRestartQuiz').addEventListener('click', initDailyQuiz);
+
+    // =========================================================================
+    // XÁC THỰC ĐĂNG NHẬP (USER / PASSWORD LƯU TRÊN DATABASE SUPABASE, Băm SHA-256)
+    // VÀ QUẢN LÝ TIẾN TRÌNH HỌC RIÊNG CHO TỪNG USER
+    // =========================================================================
+    const authScreen = document.getElementById('authScreen');
+    const appHeader = document.getElementById('appHeader');
+    const appMain = document.getElementById('appMain');
+    const authForm = document.getElementById('authForm');
+    const authUsername = document.getElementById('authUsername');
+    const authPassword = document.getElementById('authPassword');
+    const authConfirmPassword = document.getElementById('authConfirmPassword');
+    const authConfirmPwdBox = document.getElementById('authConfirmPwdBox');
+    const authRememberMe = document.getElementById('authRememberMe');
+    const authErrorMsg = document.getElementById('authErrorMsg');
+    const btnSubmitAuth = document.getElementById('btnSubmitAuth');
+    const tabBtnLogin = document.getElementById('tabBtnLogin');
+    const tabBtnRegister = document.getElementById('tabBtnRegister');
+    const authFirstSetupBanner = document.getElementById('authFirstSetupBanner');
+    const currentUserBadgeText = document.getElementById('currentUserBadgeText');
+
+    let authMode = 'login'; // 'login' | 'register'
+    let hasAnyUserInDb = true;
+    let allowPublicRegistration = true;
+
+    // Băm mật khẩu SHA-256 (Hỗ trợ cả HTTPS Web Crypto API lẫn chạy trực tiếp file://)
+    async function sha256Hash(message) {
+      const text = String(message || '');
+      if (window.crypto && window.crypto.subtle) {
+        try {
+          const msgBuffer = new TextEncoder().encode(text);
+          const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        } catch { }
+      }
+      // Fallback SHA-256 thuần JS khi mở qua giao thức file://
+      function rightRotate(value, amount) {
+        return (value >>> amount) | (value << (32 - amount));
+      }
+      const mathPow = Math.pow;
+      const maxWord = mathPow(2, 32);
+      let result = '';
+      const words = [];
+      const asciiBitLength = text.length * 8;
+      let hash = [];
+      const k = [];
+      let primeCounter = 0;
+      const isComposite = {};
+      for (let candidate = 2; primeCounter < 64; candidate++) {
+        if (!isComposite[candidate]) {
+          for (let i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+          hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
+          k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+        }
+      }
+      let str = unescape(encodeURIComponent(text)) + '\x80';
+      while ((str.length % 64) - 56) str += '\x00';
+      for (let i = 0; i < str.length; i++) {
+        const j = str.charCodeAt(i);
+        words[i >> 2] |= j << ((3 - i) % 4) * 8;
+      }
+      words[words.length] = (asciiBitLength / maxWord) | 0;
+      words[words.length] = asciiBitLength;
+      for (let j = 0; j < words.length;) {
+        const w = words.slice(j, (j += 16));
+        const oldHash = hash;
+        hash = hash.slice(0, 8);
+        for (let i = 0; i < 64; i++) {
+          const w15 = w[i - 15], w2 = w[i - 2];
+          const a = hash[0], e = hash[4];
+          const temp1 = hash[7] + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) + ((e & hash[5]) ^ (~e & hash[6])) + k[i] +
+            (w[i] = i < 16 ? w[i] : (w[i - 16] + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | 0);
+          const temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+          hash = [(temp1 + temp2) | 0].concat(hash);
+          hash[4] = (hash[4] + temp1) | 0;
+        }
+        for (let i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+      }
+      for (let i = 0; i < 8; i++) {
+        for (let j = 3; j + 1; j--) {
+          const b = (hash[i] >> (j * 8)) & 255;
+          result += (b < 16 ? 0 : '') + b.toString(16);
+        }
+      }
+      return result;
+    }
+
+    function showAuthError(msg) {
+      if (!msg) {
+        authErrorMsg.classList.add('hidden');
+        authErrorMsg.textContent = '';
+      } else {
+        authErrorMsg.textContent = msg;
+        authErrorMsg.classList.remove('hidden');
+      }
+    }
+
+    function setAuthModeUI(mode) {
+      authMode = mode;
+      showAuthError('');
+      if (mode === 'register') {
+        tabBtnRegister.className = "py-2 rounded-lg bg-white text-indigo-600 shadow-sm transition";
+        tabBtnLogin.className = "py-2 rounded-lg text-slate-600 hover:bg-white/60 transition";
+        authConfirmPwdBox.classList.remove('hidden');
+        btnSubmitAuth.innerHTML = `<i class="fa-solid fa-user-plus"></i> <span id="i18nBtnSubmitAuth">${!hasAnyUserInDb ? t('Tạo Tài khoản Chủ sở hữu & Vào học', '创建所有者账户并开始学习') : t('Đăng ký Tài khoản mới', '注册新账户')}</span>`;
+      } else {
+        tabBtnLogin.className = "py-2 rounded-lg bg-white text-indigo-600 shadow-sm transition";
+        tabBtnRegister.className = "py-2 rounded-lg text-slate-600 hover:bg-white/60 transition";
+        authConfirmPwdBox.classList.add('hidden');
+        btnSubmitAuth.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> <span id="i18nBtnSubmitAuth">${t('Đăng nhập vào học', '登录学习')}</span>`;
+      }
+    }
+
+    tabBtnLogin.addEventListener('click', () => setAuthModeUI('login'));
+    tabBtnRegister.addEventListener('click', () => {
+      if (hasAnyUserInDb && !allowPublicRegistration) {
+        showAuthError(t(
+          "Chủ sở hữu đã khóa tính năng tự đăng ký tài khoản mới. Vui lòng đăng nhập bằng tài khoản đã được cấp!",
+          "所有者已关闭公开注册功能，请使用已分配的账户登录！"
+        ));
+        return;
+      }
+      setAuthModeUI('register');
+    });
+
+    document.getElementById('btnToggleShowAuthPwd').addEventListener('click', () => {
+      const isPwd = authPassword.type === 'password';
+      authPassword.type = isPwd ? 'text' : 'password';
+      authConfirmPassword.type = isPwd ? 'text' : 'password';
+    });
+
+    function parseUserMetaRow(row) {
+      let meta = {};
+      try {
+        meta = JSON.parse(row.grammar || '{}');
+      } catch { }
+      return {
+        id: row.id,
+        username: String(row.hz || '').toLowerCase().trim(),
+        displayName: row.py || row.hz || 'User',
+        passwordHash: row.vi || '',
+        role: meta.role || (row.id === -1 ? 'owner' : 'member'),
+        allowPublicRegister: meta.allowPublicRegister !== false,
+        createdAt: meta.createdAt || 0,
+        encOrKey: meta.encOrKey || '',
+        orModel: meta.orModel || ''
+      };
+    }
+
+    // Kiểm tra trạng thái tài khoản trên Cloud
+    async function checkDatabaseAuthSetup() {
+      if (!initSupabase()) return;
+      try {
+        const { data, error } = await supabaseClient
+          .from('flashcards')
+          .select('id, hz, py, grammar, status')
+          .eq('status', '__user__')
+          .order('id', { ascending: false });
+
+        if (!error && Array.isArray(data)) {
+          hasAnyUserInDb = data.length > 0;
+          const ownerRow = data.find(r => {
+            try { return JSON.parse(r.grammar || '{}').role === 'owner' || r.id === -1; } catch { return r.id === -1; }
+          }) || data[0];
+
+          if (ownerRow) {
+            const parsedOwner = parseUserMetaRow(ownerRow);
+            allowPublicRegistration = parsedOwner.allowPublicRegister !== false;
+          }
+
+          if (!hasAnyUserInDb) {
+            authFirstSetupBanner.classList.remove('hidden');
+            setAuthModeUI('register');
+          } else {
+            authFirstSetupBanner.classList.add('hidden');
+            setAuthModeUI('login');
+          }
+        }
+      } catch (err) {
+        console.warn("Auth setup check warning:", err);
+      }
+    }
+
+    // Tìm 1 user trong Database theo username
+    async function fetchUserByUsernameFromDB(username) {
+      const cleanUser = String(username || '').toLowerCase().trim();
+      if (!cleanUser || !initSupabase()) return null;
+
+      const { data, error } = await supabaseClient
+        .from('flashcards')
+        .select('id, hz, py, vi, grammar, status')
+        .eq('status', '__user__')
+        .eq('hz', cleanUser)
+        .limit(1);
+
+      if (error) {
+        throw new Error(t("Không thể kết nối bảng dữ liệu Cloud: ", "无法连接云端数据表: ") + error.message);
+      }
+      if (!data || data.length === 0) return null;
+      return parseUserMetaRow(data[0]);
+    }
+
+    // Tạo user mới trong Database
+    async function createUserInDB(rawUsername, rawPassword, role = 'member') {
+      const cleanUsername = String(rawUsername || '').toLowerCase().trim();
+      const displayName = String(rawUsername || '').trim();
+      const pwdHash = await sha256Hash(rawPassword);
+
+      // Tạo ID âm để tách biệt hoàn toàn với ID dương của các thẻ Flashcard
+      const userId = role === 'owner' ? -1 : -Math.floor(1000 + Math.random() * 900000000);
+      const userMeta = {
+        role,
+        allowPublicRegister: true,
+        createdAt: Date.now()
+      };
+
+      const rowPayload = {
+        id: userId,
+        hz: cleanUsername,
+        py: displayName,
+        vi: pwdHash,
+        grammar: JSON.stringify(userMeta),
+        status: '__user__',
+        reviews: 0,
+        updated_at: new Date().toISOString()
+      };
+
+      const { error } = await supabaseClient.from('flashcards').upsert(rowPayload);
+      if (error) {
+        throw new Error(t("Lỗi lưu tài khoản lên Database: ", "保存账户至数据库失败: ") + error.message);
+      }
+
+      return parseUserMetaRow(rowPayload);
+    }
+
+    async function completeLoginSession(userObj, rememberMe = true) {
+      currentUser = userObj;
+      // Giải mã OpenRouter API Key của Owner nếu đã lưu mã hóa trên DB
+      if (userObj.encOrKey && userObj.passwordHash) {
+        const decrypted = xorDecipherHex(userObj.encOrKey, userObj.passwordHash);
+        if (decrypted) {
+          runtimeOpenRouterKey = decrypted;
+        }
+      }
+      if (userObj.orModel && !localStorage.getItem('cfg_openrouter_model')) {
+        localStorage.setItem('cfg_openrouter_model', userObj.orModel);
+      }
+
+      const sessionData = JSON.stringify({
+        username: userObj.username,
+        passwordHash: userObj.passwordHash,
+        ts: Date.now()
+      });
+
+      if (rememberMe) {
+        localStorage.setItem('hsk_auth_session', sessionData);
+      } else {
+        sessionStorage.setItem('hsk_auth_session', sessionData);
+        localStorage.removeItem('hsk_auth_session');
+      }
+
+      currentUserBadgeText.textContent = `${userObj.displayName}${userObj.role === 'owner' ? t(' (Chủ)', ' (所有者)') : ''}`;
+      const gearIcon = document.getElementById('settingsGearIcon');
+      const btnSettings = document.getElementById('btnOpenSettings');
+      if (userObj.role === 'owner' || userObj.role === 'admin') {
+        if (gearIcon) gearIcon.classList.remove('hidden');
+        if (btnSettings) btnSettings.title = t("Cấu hình AI & Đồng bộ Cloud (Owner)", "AI与云同步设置 (Owner)");
+      } else {
+        if (gearIcon) gearIcon.classList.add('hidden');
+        if (btnSettings) btnSettings.title = t("Trạng thái đồng bộ Cloud (Chỉ Owner mới được sửa cấu hình)", "云同步状态（仅所有者可修改设置）");
+        modalSettings.classList.add('hidden');
+      }
+
+      authScreen.classList.add('hidden');
+      appHeader.classList.remove('hidden');
+      appMain.classList.remove('hidden');
+
+      loadFromLocalStorage();
+      await loadCardsFromCloud();
+    }
+
+    function logoutCurrentUser() {
+      currentUser = null;
+      runtimeOpenRouterKey = '';
+      localStorage.removeItem('hsk_auth_session');
+      sessionStorage.removeItem('hsk_auth_session');
+      modalUserAccount.classList.add('hidden');
+      modalSettings.classList.add('hidden');
+      appHeader.classList.add('hidden');
+      appMain.classList.add('hidden');
+      authPassword.value = '';
+      authConfirmPassword.value = '';
+      authScreen.classList.remove('hidden');
+      checkDatabaseAuthSetup();
+    }
+
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showAuthError('');
+
+      const rawUser = authUsername.value.trim();
+      const rawPwd = authPassword.value;
+      const cleanUser = rawUser.toLowerCase();
+
+      if (!cleanUser || cleanUser.length < 2) {
+        showAuthError(t("Tên đăng nhập phải có ít nhất 2 ký tự!", "用户名至少需要 2 个字符！"));
+        return;
+      }
+      if (!/^[a-z0-9_.-]+$/i.test(cleanUser)) {
+        showAuthError(t("Tên đăng nhập chỉ nên gồm chữ cái không dấu, số hoặc dấu gạch dưới (_)!", "用户名仅限字母、数字、点或下划线 (_)！"));
+        return;
+      }
+      if (!rawPwd || rawPwd.length < 3) {
+        showAuthError(t("Mật khẩu phải có ít nhất 3 ký tự!", "密码至少需要 3 个字符！"));
+        return;
+      }
+
+      if (!initSupabase()) {
+        showAuthError(t("Không thể khởi tạo kết nối Cloud!", "无法初始化云端连接！"));
+        return;
+      }
+
+      const origBtnHtml = btnSubmitAuth.innerHTML;
+      btnSubmitAuth.disabled = true;
+      btnSubmitAuth.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${t('Đang xác thực với Database...', '正在与数据库验证...')}</span>`;
+
+      try {
+        if (authMode === 'register') {
+          if (hasAnyUserInDb && !allowPublicRegistration) {
+            throw new Error(t("Chủ sở hữu đã khóa đăng ký tự do. Vui lòng đăng nhập bằng tài khoản đã được cấp!", "所有者已关闭公开注册，请使用已分配的账户登录！"));
+          }
+          if (rawPwd !== authConfirmPassword.value) {
+            throw new Error(t("Mật khẩu nhập lại không khớp!", "两次输入的密码不一致！"));
+          }
+          const existing = await fetchUserByUsernameFromDB(cleanUser);
+          if (existing) {
+            throw new Error(t(`Tài khoản "${rawUser}" đã tồn tại! Vui lòng chuyển sang tab Đăng nhập.`, `账户 "${rawUser}" 已存在！请切换到登录标签页。`));
+          }
+          const role = !hasAnyUserInDb ? 'owner' : 'member';
+          const createdUser = await createUserInDB(rawUser, rawPwd, role);
+          hasAnyUserInDb = true;
+          await completeLoginSession(createdUser, authRememberMe.checked);
+        } else {
+          // Chế độ Đăng nhập
+          const dbUser = await fetchUserByUsernameFromDB(cleanUser);
+          if (!dbUser) {
+            if (!hasAnyUserInDb) {
+              throw new Error(t("Database chưa có tài khoản nào! Hãy chuyển sang tab 'Tạo tài khoản' để tạo tài khoản Chủ sở hữu đầu tiên.", "数据库尚无账户！请切换到“注册”标签页创建第一个所有者账户。"));
+            }
+            throw new Error(t("Tên đăng nhập hoặc mật khẩu không chính xác!", "用户名或密码不正确！"));
+          }
+
+          const inputHash = await sha256Hash(rawPwd);
+          const isHashMatch = dbUser.passwordHash === inputHash;
+          // Hỗ trợ trường hợp người dùng tự sửa mật khẩu dạng chữ thường trực tiếp trong bảng Cloud
+          const isPlainMatch = dbUser.passwordHash === rawPwd;
+
+          if (!isHashMatch && !isPlainMatch) {
+            throw new Error(t("Tên đăng nhập hoặc mật khẩu không chính xác!", "用户名或密码不正确！"));
+          }
+
+          // Nếu mật khẩu trên DB đang là plain text, tự động nâng cấp lên mã băm SHA-256
+          if (isPlainMatch && !isHashMatch) {
+            dbUser.passwordHash = inputHash;
+            await supabaseClient.from('flashcards').update({ vi: inputHash }).eq('id', dbUser.id);
+          }
+
+          await completeLoginSession(dbUser, authRememberMe.checked);
+        }
+      } catch (err) {
+        showAuthError(err.message || t("Lỗi xác thực tài khoản", "账户验证错误"));
+      } finally {
+        btnSubmitAuth.disabled = false;
+        btnSubmitAuth.innerHTML = origBtnHtml;
+      }
+    });
+
+    // =========================================================================
+    // MODAL 4: QUẢN LÝ TÀI KHOẢN, ĐỔI MẬT KHẨU & QUẢN TRỊ USER (OWNER)
+    // =========================================================================
+    const modalUserAccount = document.getElementById('modalUserAccount');
+    const userModalDisplayName = document.getElementById('userModalDisplayName');
+    const userModalRoleBadge = document.getElementById('userModalRoleBadge');
+    const userModalStatsText = document.getElementById('userModalStatsText');
+    const ownerAdminSection = document.getElementById('ownerAdminSection');
+    const chkAllowPublicRegister = document.getElementById('chkAllowPublicRegister');
+    const adminUserListContainer = document.getElementById('adminUserListContainer');
+
+    async function openUserAccountModal() {
+      if (!currentUser) return;
+      userModalDisplayName.textContent = `${currentUser.displayName} (@${currentUser.username})`;
+      if (currentUser.role === 'owner') {
+        userModalRoleBadge.textContent = t("Chủ sở hữu (Owner)", "所有者 (Owner)");
+        userModalRoleBadge.className = "text-[11px] px-2 py-0.5 rounded-full bg-emerald-600 text-white font-semibold";
+        ownerAdminSection.classList.remove('hidden');
+        chkAllowPublicRegister.checked = allowPublicRegistration;
+        renderAdminUserList();
+      } else {
+        userModalRoleBadge.textContent = t("Học viên (Tiến trình riêng)", "学员（独立进度）");
+        userModalRoleBadge.className = "text-[11px] px-2 py-0.5 rounded-full bg-indigo-600 text-white font-semibold";
+        ownerAdminSection.classList.add('hidden');
+      }
+
+      const mastered = cards.filter(c => c.status === 'mastered').length;
+      const learning = cards.filter(c => c.status === 'learning').length;
+      const due = cards.filter(isCardDueForSRS).length;
+      userModalStatsText.textContent = t(
+        `Tiến trình của bạn: Đã thuộc ${mastered} câu • Đang học ${learning} câu • Cần ôn SRS ${due} câu`,
+        `您的进度: 已掌握 ${mastered} 句 • 学习中 ${learning} 句 • 待复习(SRS) ${due} 句`
+      );
+
+      modalUserAccount.classList.remove('hidden');
+    }
+
+    document.getElementById('btnOpenUserModal').addEventListener('click', openUserAccountModal);
+    document.getElementById('btnCloseUserModal').addEventListener('click', () => modalUserAccount.classList.add('hidden'));
+    document.getElementById('btnCloseUserModalBottom').addEventListener('click', () => modalUserAccount.classList.add('hidden'));
+    document.getElementById('btnLogoutInModal').addEventListener('click', logoutCurrentUser);
+    document.getElementById('btnQuickLogout').addEventListener('click', () => {
+      if (confirm(t(`Bạn muốn đăng xuất khỏi tài khoản "${currentUser?.displayName || ''}"?`, `您确定要退出账户 "${currentUser?.displayName || ''}" 吗？`))) {
+        logoutCurrentUser();
+      }
+    });
+
+    // Đổi mật khẩu của tài khoản hiện tại
+    document.getElementById('btnChangePassword').addEventListener('click', async () => {
+      if (!currentUser || !supabaseClient) return;
+      const newPwd = document.getElementById('inputNewPassword').value;
+      const confirmPwd = document.getElementById('inputConfirmNewPassword').value;
+
+      if (!newPwd || newPwd.length < 3) {
+        alert(t("Mật khẩu mới phải có ít nhất 3 ký tự!", "新密码至少需要 3 个字符！"));
+        return;
+      }
+      if (newPwd !== confirmPwd) {
+        alert(t("Mật khẩu xác nhận không khớp!", "确认密码不一致！"));
+        return;
+      }
+
+      const newHash = await sha256Hash(newPwd);
+      const updatePayload = { vi: newHash, updated_at: new Date().toISOString() };
+
+      // Nếu Owner đổi mật khẩu và đang có OpenRouter Key mã hóa thì mã hóa lại theo hash mới
+      const currentOrKey = getConfig().openRouterKey;
+      if (currentUser.role === 'owner' && currentOrKey) {
+        const encOrKey = xorCipherHex(currentOrKey, newHash);
+        currentUser.encOrKey = encOrKey;
+        updatePayload.grammar = JSON.stringify({
+          role: 'owner',
+          allowPublicRegister: allowPublicRegistration,
+          createdAt: currentUser.createdAt || Date.now(),
+          encOrKey,
+          orModel: getConfig().openRouterModel
+        });
+      }
+
+      const { error } = await supabaseClient
+        .from('flashcards')
+        .update(updatePayload)
+        .eq('id', currentUser.id);
+
+      if (error) {
+        alert(t("Lỗi khi cập nhật mật khẩu: ", "更新密码失败: ") + error.message);
+        return;
+      }
+
+      currentUser.passwordHash = newHash;
+      if (localStorage.getItem('hsk_auth_session')) {
+        localStorage.setItem('hsk_auth_session', JSON.stringify({
+          username: currentUser.username,
+          passwordHash: newHash,
+          ts: Date.now()
+        }));
+      }
+      document.getElementById('inputNewPassword').value = '';
+      document.getElementById('inputConfirmNewPassword').value = '';
+      alert(t("Đã cập nhật mật khẩu mới thành công!", "新密码更新成功！"));
+    });
+
+    // Bật/tắt cho phép khách tự đăng ký (chỉ Owner)
+    chkAllowPublicRegister.addEventListener('change', async () => {
+      if (!currentUser || currentUser.role !== 'owner' || !supabaseClient) return;
+      allowPublicRegistration = chkAllowPublicRegister.checked;
+      currentUser.allowPublicRegister = allowPublicRegistration;
+      const newMeta = {
+        role: 'owner',
+        allowPublicRegister: allowPublicRegistration,
+        createdAt: currentUser.createdAt || Date.now(),
+        encOrKey: currentUser.encOrKey || '',
+        orModel: getConfig().openRouterModel
+      };
+      await supabaseClient
+        .from('flashcards')
+        .update({ grammar: JSON.stringify(newMeta), updated_at: new Date().toISOString() })
+        .eq('id', currentUser.id);
+    });
+
+    // Danh sách & Quản lý các User (chỉ Owner)
+    async function renderAdminUserList() {
+      if (!currentUser || currentUser.role !== 'owner' || !supabaseClient) return;
+      adminUserListContainer.innerHTML = `<div class="p-3 text-slate-400 text-center">${t('Đang tải danh sách user...', '正在加载用户列表...')}</div>`;
+      const { data, error } = await supabaseClient
+        .from('flashcards')
+        .select('id, hz, py, grammar, status')
+        .eq('status', '__user__')
+        .order('id', { ascending: false });
+
+      if (error || !data) {
+        adminUserListContainer.innerHTML = `<div class="p-3 text-rose-500 text-center">${t('Lỗi tải danh sách user', '加载用户列表失败')}</div>`;
+        return;
+      }
+
+      const users = data.map(parseUserMetaRow);
+      adminUserListContainer.innerHTML = users.map(u => `
+        <div class="px-3 py-2 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid ${u.role === 'owner' ? 'fa-crown text-amber-500' : 'fa-user text-slate-400'}"></i>
+            <span class="font-bold text-slate-800">${u.displayName}</span>
+            <span class="text-slate-400 font-mono text-[11px]">@${u.username}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded ${u.role === 'owner' ? 'bg-amber-100 text-amber-800 font-semibold' : 'bg-slate-100 text-slate-600'}">
+              ${u.role === 'owner' ? t('Chủ sở hữu', '所有者') : t('Học viên', '学员')}
+            </span>
+          </div>
+          ${u.role !== 'owner' ? `
+            <button type="button" data-admin-delete-id="${u.id}" data-admin-delete-user="${u.username}" class="text-rose-500 hover:text-rose-700 text-xs font-semibold px-2 py-0.5 rounded hover:bg-rose-50">
+              <i class="fa-solid fa-trash-can mr-0.5"></i> ${t('Xóa', '删除')}
+            </button>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    adminUserListContainer.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-admin-delete-id]');
+      if (!btn) return;
+      if (!currentUser || currentUser.role !== 'owner' || !supabaseClient) return;
+      const userId = Number(btn.getAttribute('data-admin-delete-id'));
+      const username = btn.getAttribute('data-admin-delete-user') || '';
+      if (!confirm(t(`Bạn có chắc chắn muốn xóa tài khoản "@${username}" không?`, `您确定要删除账户 "@${username}" 吗？`))) return;
+      const { error } = await supabaseClient.from('flashcards').delete().eq('id', userId);
+      if (error) {
+        alert(t("Lỗi khi xóa user: ", "删除用户失败: ") + error.message);
+        return;
+      }
+      await renderAdminUserList();
+    });
+
+    document.getElementById('btnAdminCreateUser').addEventListener('click', async () => {
+      if (!currentUser || currentUser.role !== 'owner') return;
+      const uName = document.getElementById('adminNewUsername').value.trim();
+      const uPwd = document.getElementById('adminNewPassword').value;
+      if (!uName || uName.length < 2) {
+        alert(t("Vui lòng nhập tên user mới (tối thiểu 2 ký tự)!", "请输入新用户名（至少 2 个字符）！"));
+        return;
+      }
+      if (!uPwd || uPwd.length < 3) {
+        alert(t("Vui lòng nhập mật khẩu (tối thiểu 3 ký tự)!", "请输入密码（至少 3 个字符）！"));
+        return;
+      }
+      try {
+        const existing = await fetchUserByUsernameFromDB(uName);
+        if (existing) {
+          alert(t(`User "${uName}" đã tồn tại!`, `用户 "${uName}" 已存在！`));
+          return;
+        }
+        await createUserInDB(uName, uPwd, 'member');
+        document.getElementById('adminNewUsername').value = '';
+        document.getElementById('adminNewPassword').value = '';
+        await renderAdminUserList();
+        alert(t(`Đã tạo tài khoản "${uName}" thành công!`, `已成功创建账户 "${uName}"！`));
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    // =========================================================================
+    // ĐA NGÔN NGỮ GIAO DIỆN WEB (VIỆT / TRUNG / SONG NGỮ) KỂ CẢ TRANG ĐĂNG NHẬP
+    // =========================================================================
+    function setElText(id, viStr, zhStr) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = t(viStr, zhStr);
+    }
+
+    function applyLanguageUI(newLang) {
+      if (newLang) {
+        uiLang = newLang;
+        localStorage.setItem('cfg_ui_lang', uiLang);
+      }
+
+      // Cập nhật trạng thái nút chọn ngôn ngữ trên cả Trang Đăng nhập và Header chính
+      document.querySelectorAll('.lang-switch-btn').forEach(btn => {
+        const code = btn.getAttribute('data-lang-switch');
+        const isActive = code === uiLang;
+        const inAuth = Boolean(btn.closest('#authScreen'));
+        if (inAuth) {
+          btn.className = `lang-switch-btn px-2 py-1 rounded-md transition ${isActive ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70'}`;
+        } else {
+          btn.className = `lang-switch-btn px-2 py-0.5 rounded-full transition ${isActive ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-100 hover:bg-indigo-700'}`;
+        }
+      });
+
+      // 1. Trang Đăng nhập / Đăng ký
+      setElText('i18nAuthSubtitle', 'Đăng nhập để tải tiến trình học cá nhân của bạn', '登录以加载您的个人学习进度');
+      setElText('i18nFirstSetupTitle', 'Khởi tạo Tài khoản Chủ sở hữu (Owner)', '初始化所有者账户');
+      setElText('i18nFirstSetupDesc', 'Database hiện chưa có tài khoản nào. Hãy tạo tài khoản đầu tiên của bạn — toàn bộ thẻ và tiến trình học hiện có sẽ thuộc về tài khoản này.', '数据库尚无账户。请创建您的第一个账户——现有全部卡片与学习进度将归属此账户。');
+      setElText('i18nTabLogin', 'Đăng nhập', '登录');
+      setElText('i18nTabRegister', 'Tạo tài khoản', '注册');
+      setElText('i18nLabelUsername', 'Tên đăng nhập (User):', '用户名:');
+      setElText('i18nLabelPassword', 'Mật khẩu:', '密码:');
+      setElText('i18nLabelConfirmPwd', 'Nhập lại mật khẩu:', '确认密码:');
+      setElText('i18nRememberMe', 'Ghi nhớ đăng nhập trên thiết bị này', '在此设备上记住登录状态');
+      setElText('i18nAuthSecurityNote', 'Bảo mật xác thực SHA-256', 'SHA-256 加密安全认证');
+      authUsername.placeholder = t('Nhập tên user...', '请输入用户名...');
+      authPassword.placeholder = t('Nhập mật khẩu...', '请输入密码...');
+      authConfirmPassword.placeholder = t('Nhập lại mật khẩu...', '请再次输入密码...');
+      setAuthModeUI(authMode);
+
+      // 2. Thanh Header & Điều hướng
+      setElText('i18nHeaderSubtitle', 'Đồng bộ tiến trình học theo từng User & Tự động tạo Pinyin/Ngữ pháp bằng AI', '按用户同步学习进度 & AI自动生成拼音/语法');
+      setElText('i18nNavStudy', 'Lật thẻ', '翻卡');
+      setElText('i18nNavQuiz', 'Kiểm tra', '测验');
+      setElText('i18nNavList', 'Danh sách', '列表');
+      setElText('i18nNavBulk', 'Import AI', '批量导入');
+      setElText('i18nNavAdd', 'Thêm câu', '添加');
+      if (currentUser) {
+        currentUserBadgeText.textContent = `${currentUser.displayName}${currentUser.role === 'owner' ? t(' (Chủ)', ' (所有者)') : ''}`;
+      }
+
+      // 3. Màn hình Lật thẻ (Flashcards)
+      setElText('i18nSrsBannerTitle', 'Lặp lại ngắt quãng (SRS):', '间隔重复 (SRS):');
+      setElText('i18nSrsBannerSuffix', 'cần ôn tập hôm nay', '今日待复习');
+      setElText('i18nSrsBannerDesc', 'Bao gồm câu chưa thuộc, câu trả lời sai khi kiểm tra hoặc câu đã đến hạn ôn lại để tránh quên.', '包含未记住、测验答错或今日到期需复习的句子。');
+      setElText('i18nBtnStudySrsNow', 'Học lại ngay', '立即复习');
+      setElText('i18nBtnQuizSrsNow', 'Kiểm tra câu cần ôn', '测验待复习');
+      setElText('i18nProgressLabel', 'Tiến độ:', '进度:');
+      setElText('i18nBtnNewFolderQuick', '+ Thư mục', '+ 文件夹');
+      setElText('i18nFilterAll', 'Tất cả trạng thái', '全部状态');
+      setElText('i18nFilterSrsDue', '🔥 Cần ôn hôm nay (SRS)', '🔥 今日待复习 (SRS)');
+      setElText('i18nFilterNew', '🌱 Mới chưa học', '🌱 未学新卡');
+      setElText('i18nFilterHard', '⚠️ Chưa nhớ / Hay sai', '⚠️ 未记住 / 易错');
+      setElText('i18nFilterLearning', '⏳ Đang học (Ôn sau)', '⏳ 学习中（待复习）');
+      setElText('i18nFilterMastered', '✅ Đã thuộc (Dễ)', '✅ 已掌握（简单）');
+      setElText('i18nFlipBackHint', 'Bấm để lật lại', '点击翻回');
+      setElText('i18nCardBackFooter', 'Đánh giá bên dưới để lên lịch Lặp lại ngắt quãng (SRS) 👇', '请在下方评估记忆程度以安排复习计划 (SRS) 👇');
+      setElText('i18nBtnHardLabel', 'Chưa nhớ', '没记住');
+      setElText('i18nBtnHardSubtext', 'Ôn lại ngay hôm nay', '今日重温');
+      setElText('i18nBtnGoodLabel', 'Bình thường', '一般');
+      setElText('i18nBtnEasyLabel', 'Đã nhớ (Dễ)', '已记住（简单）');
+
+      // 4. Màn hình Kiểm tra (Quiz)
+      setElText('i18nQuizHeaderTitle', 'Luyện tập & Kiểm tra', '练习与测验');
+      setElText('i18nQuizSrcAll', 'Tất cả câu trong thư mục', '文件夹内全部句子');
+      setElText('i18nQuizSrcPriority', '🔥 Ưu tiên câu Cần ôn / Hay sai', '🔥 优先待复习 / 易错句');
+      setElText('i18nQuizSrcOnly', '⚠️ Chỉ câu Cần ôn hôm nay (SRS)', '⚠️ 仅今日待复习 (SRS)');
+      setElText('i18nQuizSelectFolderLabel', 'Chọn thư mục bộ thẻ muốn kiểm tra:', '选择要测验的文件夹:');
+      setElText('btnQuizSelectAllFolders', 'Chọn tất cả', '全选');
+      setElText('i18nQModeZhVi', 'Trung ➔ Việt', '中译越');
+      setElText('i18nQModeViZh', 'Việt ➔ Trung', '越译中');
+      setElText('i18nQModeListenChoice', 'Nghe ➔ Chọn', '听音选义');
+      setElText('i18nQModeListenType', 'Nghe ➔ Gõ', '听音输入');
+      setElText('i18nQModeMixed', 'Ngẫu nhiên', '随机混合');
+      setElText('i18nBtnPlayNormal', 'Nghe câu tiếng Trung', '播放中文句子');
+      setElText('i18nBtnPlaySlow', 'Nghe chậm', '慢速播放');
+      setElText('quizListenHint', 'Bấm nút loa để nghe lại (Chữ Hán sẽ hiện sau khi bạn trả lời)', '点击喇叭重听（答题后显示汉字与拼音）');
+      setElText('i18nBtnSubmitTyping', 'Kiểm tra', '提交');
+      setElText('i18nTypingSynonymHint', 'Hệ thống tự động chấp nhận các từ đồng nghĩa và cách diễn đạt tương đương.', '系统自动支持同义词与相近表达评判。');
+      setElText('i18nBtnNextQuiz', 'Câu tiếp theo', '下一题');
+      setElText('i18nBtnRestartQuiz', 'Làm lại lượt kiểm tra mới', '重新开始测验');
+      quizTypingInput.placeholder = t('Nhập nghĩa tiếng Việt bạn nghe được (chấp nhận từ đồng nghĩa)...', '输入您听到的越南语意思（支持同义词）...');
+
+      // 5. Màn hình Danh sách & Modal
+      setElText('i18nListHeaderTitle', 'Danh sách toàn bộ thẻ câu', '全部卡片列表');
+      setElText('i18nBtnImportJson', 'Nhập JSON', '导入 JSON');
+      setElText('i18nBtnExportJson', 'Xuất JSON', '导出 JSON');
+      searchListInput.placeholder = t('Tìm chữ Hán, Pinyin, nghĩa...', '搜索汉字、拼音、越南语释义...');
+
+      setElText('i18nModalAddTitle', 'Thêm câu học mới', '添加新句子');
+      setElText('i18nModalAddFolderLabel', 'Thư mục bộ thẻ:', '所属文件夹:');
+      setElText('btnCreateFolderInSingle', '+ Thư mục mới', '+ 新建文件夹');
+      setElText('i18nModalAddHzLabel', 'Chữ Hán (Chỉ cần nhập mục này):', '汉字（只需输入此项）:');
+      setElText('i18nBtnAutoFillSingle', 'Tự động điền AI', 'AI自动填充');
+      setElText('i18nModalAddPyLabel', 'Pinyin (Tự động tạo khi gõ chữ Hán):', '拼音（输入汉字时自动生成）:');
+      setElText('i18nModalAddViLabel', 'Nghĩa tiếng Việt:', '越南语释义:');
+      setElText('i18nModalAddGrammarLabel', 'Giải thích từ vựng / Ngữ pháp:', '词汇与语法解析:');
+      setElText('btnCancelAdd', 'Hủy', '取消');
+      setElText('btnSaveCard', 'Lưu thẻ mới', '保存新卡');
+
+      setElText('i18nModalBulkTitle', 'Import nhanh bằng AI', 'AI批量导入中文句子');
+      setElText('i18nModalBulkSubtitle', 'Mỗi dòng 1 câu tiếng Trung. Hệ thống tự động tạo Pinyin, dịch nghĩa tiếng Việt và phân tích ngữ pháp.', '每行一句中文。系统自动生成拼音、越南语翻译与语法解析。');
+      setElText('i18nModalBulkFolderLabel', 'Lưu các câu này vào thư mục:', '将这些句子保存至文件夹:');
+      setElText('btnCreateFolderInBulk', '+ Thư mục mới', '+ 新建文件夹');
+      setElText('i18nModalBulkInputLabel', 'Danh sách câu tiếng Trung (mỗi câu 1 dòng):', '中文句子列表（每行一句）:');
+      setElText('i18nBtnAnalyzeBulk', 'Phân tích & Tự điền tất cả', 'AI解析并自动填充全部');
+      setElText('btnCancelBulk', 'Đóng', '关闭');
+
+      setElText('i18nUserModalTitle', 'Tài khoản & Tiến trình học cá nhân', '个人账户与学习进度');
+      setElText('i18nLoggedInAsLabel', 'Đang đăng nhập với tài khoản:', '当前登录账户:');
+      setElText('i18nBtnLogoutModal', 'Đăng xuất', '退出登录');
+      setElText('i18nChangePwdHeader', 'Đổi mật khẩu của bạn', '修改您的密码');
+      setElText('btnChangePassword', 'Cập nhật mật khẩu', '更新密码');
+      setElText('btnCloseUserModalBottom', 'Đóng', '关闭');
+
+      // Cập nhật lại các thành phần động
+      applyPinyinBlurStyle();
+      updateAutoSpeakButtonUI();
+      if (cards.length > 0) {
+        refreshAllFolderSelectors();
+        updateStatsSummary();
+        updateCardUI(false);
+        if (!viewList.classList.contains('hidden')) renderList();
+        if (!viewQuiz.classList.contains('hidden')) renderQuizQuestion();
+      }
+    }
+
+    document.querySelectorAll('.lang-switch-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const lang = btn.getAttribute('data-lang-switch');
+        if (lang) applyLanguageUI(lang);
+      });
+    });
+
+    // Tự động khôi phục phiên đăng nhập hoặc yêu cầu xác thực trước khi vào học
+    async function initAuthAndStartApp() {
+      applyLanguageUI(uiLang);
+      initSupabase();
+      const rawSession = localStorage.getItem('hsk_auth_session') || sessionStorage.getItem('hsk_auth_session');
+      if (rawSession && supabaseClient) {
+        try {
+          const parsed = JSON.parse(rawSession);
+          if (parsed && parsed.username && parsed.passwordHash) {
+            const dbUser = await fetchUserByUsernameFromDB(parsed.username);
+            if (dbUser && dbUser.passwordHash === parsed.passwordHash) {
+              await completeLoginSession(dbUser, Boolean(localStorage.getItem('hsk_auth_session')));
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Session restore failed:", err);
+        }
+      }
+      // Nếu chưa đăng nhập hoặc phiên không hợp lệ -> giữ ở màn hình Đăng nhập
+      await checkDatabaseAuthSetup();
+    }
+
+    // Khởi chạy ứng dụng qua bước xác thực
+    initAuthAndStartApp();
+  })();
+  </script>
+</body>
+
+</html>
