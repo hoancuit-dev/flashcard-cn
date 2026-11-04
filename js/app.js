@@ -1724,7 +1724,11 @@ async function initAuthAndStartApp() {
   await checkDatabaseAuthSetup();
 }
 
-// Khởi chạy khi tài liệu tải xong
-window.addEventListener('DOMContentLoaded', () => {
+window.initAuthAndStartApp = initAuthAndStartApp;
+
+// Khởi chạy khi tài liệu tải xong hoặc ngay lập tức nếu DOM đã sẵn sàng
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAuthAndStartApp);
+} else {
   initAuthAndStartApp();
-});
+}

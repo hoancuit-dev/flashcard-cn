@@ -276,7 +276,7 @@ async function callOpenRouterJson(prompt, openRouterKey, preferredModel) {
       }
       lastErrorMsg = "Model trả về dữ liệu không đúng cấu trúc JSON";
     } catch (err) {
-      if (err.message && err.message.startsWith('OpenRouter (')) {
+      if (err.message && /^OpenRouter\s*\(\d+\)/.test(err.message)) {
         throw err;
       }
       lastErrorMsg = err.message || "Lỗi kết nối mạng tới OpenRouter";

@@ -4,27 +4,25 @@
  */
 window.HSK = window.HSK || {};
 
-(function (HSK) {
-  'use strict';
+var uiLang = localStorage.getItem('cfg_ui_lang') || 'bi'; // 'vi' | 'zh' | 'bi'
 
-  let uiLang = localStorage.getItem('cfg_ui_lang') || 'bi'; // 'vi' | 'zh' | 'bi'
+function t(viStr, zhStr) {
+  if (uiLang === 'vi') return viStr;
+  if (uiLang === 'zh') return zhStr;
+  return `${viStr} • ${zhStr}`;
+}
 
-  function t(viStr, zhStr) {
-    if (uiLang === 'vi') return viStr;
-    if (uiLang === 'zh') return zhStr;
-    return `${viStr} • ${zhStr}`;
+function setElText(id, viStr, zhStr) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = t(viStr, zhStr);
+}
+
+function applyLanguageUI(newLang) {
+  if (newLang) {
+    uiLang = newLang;
+    window.uiLang = newLang;
+    localStorage.setItem('cfg_ui_lang', uiLang);
   }
-
-  function setElText(id, viStr, zhStr) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = t(viStr, zhStr);
-  }
-
-  function applyLanguageUI(newLang) {
-    if (newLang) {
-      uiLang = newLang;
-      localStorage.setItem('cfg_ui_lang', uiLang);
-    }
 
     // Cập nhật trạng thái nút chọn ngôn ngữ trên cả Trang Đăng nhập và Header chính
     document.querySelectorAll('.lang-switch-btn').forEach(btn => {
@@ -173,9 +171,9 @@ window.HSK = window.HSK || {};
     setElText('btnCloseUserModalBottom', 'Đóng', '关闭');
 
     // Cập nhật các thành phần động nếu ứng dụng đã tải
-    if (HSK.app && typeof HSK.app.refreshUIForLanguage === 'function') {
-      HSK.app.refreshUIForLanguage();
-    }
+    if (typeof refreshAllFolderSelectors === 'function') refreshAllFolderSelectors();
+    if (typeof updateStatsSummary === 'function') updateStatsSummary();
+    if (typeof updateCardUI === 'function') updateCardUI(false);
   }
 
   // Lắng nghe sự kiện bấm nút chọn ngôn ngữ
@@ -188,15 +186,18 @@ window.HSK = window.HSK || {};
     });
   });
 
-  HSK.i18n = {
+  // Xuất toàn cục cho toàn bộ các module script
+  window.uiLang = uiLang;
+  window.t = t;
+  window.setElText = setElText;
+  window.applyLanguageUI = applyLanguageUI;
+
+  // Xuất vào namespace HSK
+  window.HSK.i18n = {
     t,
     setElText,
     applyLanguageUI,
-    getLang: () => uiLang
+    getLang: () => (window.uiLang || uiLang)
   };
-
-  // Tiện ích tắt
-  HSK.t = t;
-  HSK.applyLanguageUI = applyLanguageUI;
-
-})(window.HSK);
+  window.HSK.t = t;
+  window.HSK.applyLanguageUI = applyLanguageUI;
