@@ -15,12 +15,12 @@ var selectedQuizFolders = new Set(['all']); // 'all' hoặc danh sách tên các
 
 // DOM Elements - Flashcard & Study
 var studyFolderSelect = document.getElementById('studyFolderSelect');
-var filterSelect = document.getElementById('filterStatusSelect');
-var cardContainer = document.getElementById('flashcard');
-var cardInner = document.getElementById('flashcardInner');
-var cardHanzi = document.getElementById('cardHz');
+var filterSelect = document.getElementById('filterSelect');
+var cardContainer = document.getElementById('cardContainer');
+var cardInner = document.getElementById('cardInner');
+var cardHanzi = document.getElementById('cardHanzi');
 var cardPinyin = document.getElementById('cardPinyin');
-var cardMeaning = document.getElementById('cardVi');
+var cardMeaning = document.getElementById('cardMeaning');
 var cardBackPinyin = document.getElementById('cardBackPinyin');
 var cardGrammar = document.getElementById('cardGrammar');
 var cardFrontSideBadge = document.getElementById('cardFrontSideBadge');
@@ -34,7 +34,6 @@ var statsSummaryText = document.getElementById('statsSummaryText');
 var srsDueCountText = document.getElementById('srsDueCountText');
 
 var btnToggleDirection = document.getElementById('btnToggleDirection');
-var directionIcon = document.getElementById('directionIcon');
 var directionLabel = document.getElementById('directionLabel');
 var btnToggleBlurPinyin = document.getElementById('btnToggleBlurPinyin');
 var blurPinyinIcon = document.getElementById('blurPinyinIcon');
@@ -61,14 +60,15 @@ var btnListMode = document.getElementById('btnListMode');
 // CÁC HÀM ĐIỀU KHIỂN GIAO DIỆN THẺ (DIRECTION, PINYIN BLUR, AUTO SPEAK)
 // =========================================================================
 function updateDirectionButtonUI() {
+  const iconEl = btnToggleDirection ? btnToggleDirection.querySelector('i') : null;
   if (cardDirection === 'vi_to_zh') {
-    btnToggleDirection.className = "text-xs px-3 py-1.5 rounded-full bg-[#34C759]/12 text-[#1D8338] border border-[#34C759]/25 font-semibold apple-btn flex items-center gap-1";
-    directionIcon.className = "fa-solid fa-arrow-left-long text-xs";
-    directionLabel.textContent = t("Chiều: Việt ➔ Trung", "方向: 越 ➔ 中");
+    if (btnToggleDirection) btnToggleDirection.className = "text-xs px-3 py-1.5 rounded-full bg-[#34C759]/12 text-[#1D8338] border border-[#34C759]/25 font-semibold apple-btn flex items-center gap-1";
+    if (iconEl) iconEl.className = "fa-solid fa-arrow-left-long text-xs";
+    if (directionLabel) directionLabel.textContent = t("Chiều: Việt ➔ Trung", "方向: 越 ➔ 中");
   } else {
-    btnToggleDirection.className = "text-xs px-3 py-1.5 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-semibold apple-btn flex items-center gap-1";
-    directionIcon.className = "fa-solid fa-arrow-right-long text-xs";
-    directionLabel.textContent = t("Chiều: Trung ➔ Việt", "方向: 中 ➔ 越");
+    if (btnToggleDirection) btnToggleDirection.className = "text-xs px-3 py-1.5 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-semibold apple-btn flex items-center gap-1";
+    if (iconEl) iconEl.className = "fa-solid fa-arrow-right-long text-xs";
+    if (directionLabel) directionLabel.textContent = t("Chiều: Trung ➔ Việt", "方向: 中 ➔ 越");
   }
 }
 
@@ -1697,6 +1697,14 @@ document.getElementById('btnRestartQuiz').addEventListener('click', initDailyQui
 // =========================================================================
 // KHỞI ĐỘNG ỨNG DỤNG & PHỤC HỒI PHIÊN ĐĂNG NHẬP
 // =========================================================================
+window.refreshAllFolderSelectors = refreshAllFolderSelectors;
+window.applyFilter = applyFilter;
+window.updateCardUI = updateCardUI;
+window.renderDecksOverview = renderDecksOverview;
+window.renderList = renderList;
+window.initDailyQuiz = initDailyQuiz;
+window.switchTab = switchTab;
+
 async function initAuthAndStartApp() {
   initThemeUI();
   updateDirectionButtonUI();

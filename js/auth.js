@@ -270,7 +270,14 @@ async function completeLoginSession(userObj, rememberMe = true) {
   appMain.classList.remove('hidden');
 
   loadFromLocalStorage();
+  if (typeof refreshAllFolderSelectors === 'function') refreshAllFolderSelectors();
+  if (typeof applyFilter === 'function') applyFilter();
+  if (typeof renderDecksOverview === 'function') renderDecksOverview();
+
   await loadCardsFromCloud();
+  if (typeof refreshAllFolderSelectors === 'function') refreshAllFolderSelectors();
+  if (typeof applyFilter === 'function') applyFilter();
+  if (typeof renderDecksOverview === 'function') renderDecksOverview();
 }
 
 function logoutCurrentUser() {
@@ -579,3 +586,17 @@ document.getElementById('btnAdminCreateUser').addEventListener('click', async ()
     alert(err.message);
   }
 });
+
+// Xuất toàn cục cho toàn bộ các module script
+window.currentUser = currentUser;
+window.sha256Hash = sha256Hash;
+window.showAuthError = showAuthError;
+window.setAuthModeUI = setAuthModeUI;
+window.parseUserMetaRow = parseUserMetaRow;
+window.checkDatabaseAuthSetup = checkDatabaseAuthSetup;
+window.fetchUserByUsernameFromDB = fetchUserByUsernameFromDB;
+window.createUserInDB = createUserInDB;
+window.completeLoginSession = completeLoginSession;
+window.logoutCurrentUser = logoutCurrentUser;
+window.openUserAccountModal = openUserAccountModal;
+window.renderAdminUserList = renderAdminUserList;

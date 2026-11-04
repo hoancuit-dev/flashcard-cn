@@ -58,6 +58,7 @@ function loadFromLocalStorage() {
     cards = baseCards;
     localStorage.setItem(storageKey, JSON.stringify(cards));
   }
+  window.cards = cards;
 
   if (typeof refreshAllFolderSelectors === 'function') refreshAllFolderSelectors();
   if (typeof applyFilter === 'function') applyFilter();
@@ -116,12 +117,15 @@ async function loadCardsFromCloud() {
       }
       return unpacked;
     });
+    window.cards = cards;
     saveToLocalStorage();
     if (typeof refreshAllFolderSelectors === 'function') refreshAllFolderSelectors();
     if (typeof applyFilter === 'function') applyFilter();
     setSyncStatus('connected', `Cloud (${cards.length})`);
   } else {
     await pushAllLocalCardsToCloud(false);
+    if (typeof refreshAllFolderSelectors === 'function') refreshAllFolderSelectors();
+    if (typeof applyFilter === 'function') applyFilter();
   }
 }
 
@@ -327,3 +331,21 @@ ${JSON.stringify(sentences)}`;
     };
   });
 }
+
+// Xuất toàn cục cho toàn bộ các module script
+window.cards = cards;
+window.customFolders = customFolders;
+window.getAllFolders = getAllFolders;
+window.saveCustomFolders = saveCustomFolders;
+window.getUserLocalStorageKey = getUserLocalStorageKey;
+window.loadFromLocalStorage = loadFromLocalStorage;
+window.saveToLocalStorage = saveToLocalStorage;
+window.loadCardsFromCloud = loadCardsFromCloud;
+window.upsertCardToCloud = upsertCardToCloud;
+window.upsertMultipleCardsToCloud = upsertMultipleCardsToCloud;
+window.deleteCardFromCloud = deleteCardFromCloud;
+window.pushAllLocalCardsToCloud = pushAllLocalCardsToCloud;
+window.generateLocalPinyin = generateLocalPinyin;
+window.extractJsonFromText = extractJsonFromText;
+window.callOpenRouterJson = callOpenRouterJson;
+window.analyzeChineseSentencesWithAI = analyzeChineseSentencesWithAI;
