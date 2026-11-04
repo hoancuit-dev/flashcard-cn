@@ -3,9 +3,20 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>HSK Flashcards — Apple Design</title>
+  
+  <!-- Phông chữ: Be Vietnam Pro (Chuẩn hiển thị Tiếng Việt phong cách Apple VN / Claude, không lỗi dấu), Inter (Font Claude), Noto Sans SC (Chữ Hán) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -16,6 +27,13 @@
       --apple-bg: #F5F5F7;
       --apple-text: #1D1D1F;
       --apple-subtext: #86868B;
+      --apple-surface: rgba(255, 255, 255, 0.88);
+      --apple-glass-header: rgba(255, 255, 255, 0.82);
+      --apple-border: rgba(0, 0, 0, 0.06);
+      --apple-input-bg: #F5F5F7;
+      --apple-card-front-bg: linear-gradient(180deg, #FFFFFF 0%, #FAFAFC 100%);
+      --apple-card-back-bg: linear-gradient(160deg, #1D1D1F 0%, #2C2C2E 100%);
+      --apple-segmented-bg: rgba(118, 118, 128, 0.12);
       --apple-blue: #0071E3;
       --apple-blue-hover: #0077ED;
       --apple-green: #34C759;
@@ -23,8 +41,21 @@
       --apple-red: #FF3B30;
     }
 
+    html.dark {
+      --apple-bg: #000000;
+      --apple-text: #F5F5F7;
+      --apple-subtext: #8E8E93;
+      --apple-surface: rgba(28, 28, 30, 0.90);
+      --apple-glass-header: rgba(20, 20, 22, 0.85);
+      --apple-border: rgba(255, 255, 255, 0.12);
+      --apple-input-bg: #2C2C2E;
+      --apple-card-front-bg: linear-gradient(180deg, #1C1C1E 0%, #242426 100%);
+      --apple-card-back-bg: linear-gradient(160deg, #0E0E10 0%, #1A1A1D 100%);
+      --apple-segmented-bg: rgba(255, 255, 255, 0.12);
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      font-family: "SF Pro VN", "SF Pro Display", "SF Pro Text", "Be Vietnam Pro", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
       background-color: var(--apple-bg);
       background-image:
         radial-gradient(at 12% 8%, rgba(0, 113, 227, 0.06) 0px, transparent 45%),
@@ -34,6 +65,14 @@
       color: var(--apple-text);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    html.dark body {
+      background-image:
+        radial-gradient(at 12% 8%, rgba(10, 132, 255, 0.12) 0px, transparent 45%),
+        radial-gradient(at 88% 12%, rgba(94, 92, 230, 0.12) 0px, transparent 45%),
+        radial-gradient(at 50% 90%, rgba(48, 209, 88, 0.07) 0px, transparent 50%);
     }
 
     .perspective-1000 {
@@ -55,41 +94,55 @@
     }
 
     .apple-glass-header {
-      background: rgba(255, 255, 255, 0.78);
+      background: var(--apple-glass-header);
       backdrop-filter: saturate(180%) blur(24px);
       -webkit-backdrop-filter: saturate(180%) blur(24px);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      border-bottom: 1px solid var(--apple-border);
     }
 
     .apple-surface {
-      background: rgba(255, 255, 255, 0.88);
+      background: var(--apple-surface);
       backdrop-filter: saturate(180%) blur(20px);
       -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border: 1px solid rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--apple-border);
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
     }
 
+    html.dark .apple-surface {
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
     .apple-card-front {
-      background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFC 100%);
-      border: 1px solid rgba(0, 0, 0, 0.06);
+      background: var(--apple-card-front-bg);
+      border: 1px solid var(--apple-border);
       box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.08), 0 4px 16px -2px rgba(0, 0, 0, 0.03);
     }
 
+    html.dark .apple-card-front {
+      box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.55), 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+    }
+
     .apple-card-back {
-      background: linear-gradient(160deg, #1D1D1F 0%, #2C2C2E 100%);
+      background: var(--apple-card-back-bg);
       border: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.26);
     }
 
+    html.dark .apple-card-back {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.7);
+    }
+
     .apple-segmented {
-      background: rgba(118, 118, 128, 0.12);
+      background: var(--apple-segmented-bg);
       padding: 3px;
       border-radius: 9999px;
     }
 
     .apple-input {
-      background: #F5F5F7;
-      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: var(--apple-input-bg);
+      border: 1px solid var(--apple-border);
+      color: var(--apple-text);
       transition: all 0.2s ease;
     }
 
@@ -100,6 +153,12 @@
       outline: none;
     }
 
+    html.dark .apple-input:focus {
+      background: #1C1C1E;
+      border-color: #0A84FF;
+      box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.25);
+    }
+
     .apple-btn {
       transition: all 0.18s cubic-bezier(0.25, 1, 0.5, 1);
     }
@@ -107,17 +166,230 @@
     .apple-btn:active {
       transform: scale(0.97);
     }
+
+    /* Dark Mode Utility Classes Overrides */
+    html.dark .text-\[\#1D1D1F\] {
+      color: #F5F5F7 !important;
+    }
+
+    html.dark .text-\[\#86868B\] {
+      color: #8E8E93 !important;
+    }
+
+    html.dark .bg-\[\#F5F5F7\] {
+      background-color: #2C2C2E !important;
+    }
+
+    html.dark .bg-\[\#F5F5F7\]\/80,
+    html.dark .bg-\[\#F5F5F7\]\/60 {
+      background-color: rgba(44, 44, 46, 0.75) !important;
+    }
+
+    html.dark .bg-\[\#E8E8ED\]\/70 {
+      background-color: rgba(44, 44, 46, 0.85) !important;
+    }
+
+    html.dark .border-black\/\[0\.05\],
+    html.dark .border-black\/\[0\.06\],
+    html.dark .border-black\/\[0\.08\] {
+      border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    html.dark .divide-black\/\[0\.05\],
+    html.dark .divide-black\/\[0\.06\] {
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    html.dark .bg-black\/\[0\.04\],
+    html.dark .bg-black\/\[0\.05\] {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      color: #F5F5F7 !important;
+    }
+
+    html.dark .bg-black\/\[0\.08\],
+    html.dark .bg-black\/\[0\.09\],
+    html.dark .bg-black\/\[0\.1\] {
+      background-color: rgba(255, 255, 255, 0.15) !important;
+      color: #FFFFFF !important;
+    }
+
+    html.dark .bg-white\/90,
+    html.dark .bg-white\/95 {
+      background-color: rgba(28, 28, 30, 0.94) !important;
+    }
+
+    html.dark .bg-white {
+      background-color: #2C2C2E !important;
+      color: #F5F5F7 !important;
+    }
+
+    /* Modals & Dialogs in Dark Mode */
+    html.dark #modalAddCard > div,
+    html.dark #modalBulkImport > div,
+    html.dark #modalSettings > div,
+    html.dark #modalUserAccount > div {
+      background-color: rgba(28, 28, 30, 0.96) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    /* Auth Screen in Dark Mode */
+    html.dark #authScreen {
+      background-color: #000000 !important;
+      background-image:
+        radial-gradient(at 20% 20%, rgba(10, 132, 255, 0.16) 0px, transparent 50%),
+        radial-gradient(at 80% 80%, rgba(94, 92, 230, 0.16) 0px, transparent 50%) !important;
+    }
+
+    html.dark #authScreen > div {
+      background-color: rgba(28, 28, 30, 0.94) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    /* Apple Segmented Active Pill in Dark Mode */
+    html.dark .apple-segmented > button.bg-white,
+    html.dark .apple-segmented button.bg-white {
+      background-color: #3A3A3C !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    html.dark .apple-segmented > button:not(.bg-white),
+    html.dark .apple-segmented button:not(.bg-white) {
+      color: #8E8E93 !important;
+    }
+
+    html.dark .apple-segmented > button:not(.bg-white):hover,
+    html.dark .apple-segmented button:not(.bg-white):hover {
+      color: #FFFFFF !important;
+    }
+
+    /* Flashcard SRS Buttons in Dark Mode */
+    html.dark #btnHard {
+      background-color: #241A1A !important;
+      color: #FF453A !important;
+      border-color: rgba(255, 69, 58, 0.35) !important;
+    }
+    html.dark #btnHard:hover {
+      background-color: #331F1F !important;
+    }
+
+    html.dark #btnGood {
+      background-color: #242017 !important;
+      color: #FF9F0A !important;
+      border-color: rgba(255, 159, 10, 0.35) !important;
+    }
+    html.dark #btnGood:hover {
+      background-color: #332B1C !important;
+    }
+
+    html.dark #btnEasy {
+      background-color: #162419 !important;
+      color: #30D158 !important;
+      border-color: rgba(48, 209, 88, 0.35) !important;
+    }
+    html.dark #btnEasy:hover {
+      background-color: #1F3323 !important;
+    }
+
+    /* Quiz questions & options in Dark Mode */
+    html.dark #quizOptions button {
+      background-color: #242426;
+      border-color: rgba(255, 255, 255, 0.12);
+      color: #F5F5F7;
+    }
+    html.dark #quizOptions button:hover {
+      background-color: #2C2C2E;
+      border-color: #0A84FF;
+    }
+    html.dark #quizOptions button .text-slate-800 {
+      color: #F5F5F7 !important;
+    }
+    html.dark #quizOptions button .text-indigo-600 {
+      color: #64D2FF !important;
+    }
+    html.dark #quizQuestion {
+      color: #F5F5F7 !important;
+    }
+    html.dark #quizPromptBox {
+      background-color: #242426 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    html.dark #quizRevealHanzi,
+    html.dark #quizTargetHanzi {
+      color: #F5F5F7 !important;
+    }
+
+    /* Decks & Cards List in Dark Mode */
+    html.dark [data-deck-card] {
+      background-color: #242426 !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    html.dark [data-deck-card]:hover {
+      background-color: #2C2C2E !important;
+    }
+    html.dark [data-deck-card] button {
+      background-color: #3A3A3C !important;
+      color: #F5F5F7 !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+    html.dark [data-deck-card] button:hover {
+      background-color: #0A84FF !important;
+      color: #FFFFFF !important;
+    }
+    html.dark #allCardsTable > div:hover {
+      background-color: rgba(255, 255, 255, 0.04) !important;
+    }
+    html.dark #allCardsTable button {
+      background-color: rgba(255, 255, 255, 0.08) !important;
+      color: #F5F5F7 !important;
+    }
+    html.dark #allCardsTable button:hover {
+      background-color: #0A84FF !important;
+      color: #FFFFFF !important;
+    }
+
+    /* Banners in Dark Mode */
+    html.dark #authFirstSetupBanner {
+      background-color: rgba(255, 159, 10, 0.15) !important;
+      border-color: rgba(255, 159, 10, 0.35) !important;
+      color: #FFD60A !important;
+    }
+    html.dark #authFirstSetupBanner p {
+      color: #FFE680 !important;
+    }
+    html.dark #authErrorMsg {
+      background-color: rgba(255, 69, 58, 0.15) !important;
+      border-color: rgba(255, 69, 58, 0.35) !important;
+      color: #FF453A !important;
+    }
+
+    /* Responsive adjustments for mobile screens (iPhone SE, 320px - 430px) */
+    @media (max-width: 640px) {
+      input[type="text"],
+      input[type="password"],
+      select,
+      textarea {
+        font-size: 16px !important; /* Prevents auto-zoom on iOS Safari */
+      }
+
+      .perspective-1000 {
+        perspective: 800px;
+      }
+    }
   </style>
 </head>
 
 <body class="min-h-screen flex flex-col">
 
   <!-- Màn hình Xác thực Đăng nhập / Đăng ký (Phong cách Apple ID / iCloud) -->
-  <div id="authScreen" class="fixed inset-0 bg-[#F5F5F7] z-50 flex items-center justify-center p-4 overflow-y-auto"
+  <div id="authScreen" class="fixed inset-0 bg-[#F5F5F7] z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
     style="background-image: radial-gradient(at 20% 20%, rgba(0, 113, 227, 0.10) 0px, transparent 50%), radial-gradient(at 80% 80%, rgba(88, 86, 214, 0.10) 0px, transparent 50%);">
-    <div class="bg-white/90 backdrop-blur-2xl w-full max-w-md rounded-[30px] shadow-[0_24px_60px_rgba(0,0,0,0.08)] p-7 sm:p-9 space-y-5 border border-black/[0.06] relative">
-      <!-- Nút chọn ngôn ngữ trên trang Đăng nhập -->
-      <div class="flex justify-end">
+    <div class="bg-white/90 backdrop-blur-2xl w-full max-w-md rounded-[26px] sm:rounded-[30px] shadow-[0_24px_60px_rgba(0,0,0,0.08)] p-5 sm:p-9 space-y-4 sm:space-y-5 border border-black/[0.06] relative">
+      <!-- Nút chọn Darkmode & Ngôn ngữ trên trang Đăng nhập -->
+      <div class="flex justify-between items-center">
+        <button type="button" class="theme-toggle-btn w-8 h-8 rounded-full apple-segmented flex items-center justify-center text-xs apple-btn" title="Chế độ Sáng / Tối • 亮色/暗色模式">
+          <i class="theme-toggle-icon fa-solid fa-moon text-indigo-500"></i>
+        </button>
         <div class="inline-flex items-center apple-segmented text-[11px] font-semibold">
           <button type="button" data-lang-switch="vi" class="lang-switch-btn px-2.5 py-1 rounded-full transition">🇻🇳 Việt</button>
           <button type="button" data-lang-switch="zh" class="lang-switch-btn px-2.5 py-1 rounded-full transition">🇨🇳 中文</button>
@@ -207,88 +479,94 @@
 
   <!-- Header (Phong cách macOS / iPadOS Frosted Glass Navigation Bar) -->
   <header id="appHeader" class="hidden sticky top-0 z-40 apple-glass-header">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-      <div>
-        <div class="flex items-center gap-2 flex-wrap">
-          <div class="flex items-center gap-2 mr-1">
-            <span class="w-8 h-8 rounded-[10px] bg-gradient-to-b from-[#0077ED] to-[#0071E3] text-white flex items-center justify-center text-sm shadow-sm">
-              <i class="fa-solid fa-language"></i>
-            </span>
-            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-[#1D1D1F]">HSK Flashcards</h1>
-          </div>
+    <div class="max-w-5xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-2 sm:gap-3">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-[10px] bg-gradient-to-b from-[#0077ED] to-[#0071E3] text-white flex items-center justify-center text-sm shadow-sm shrink-0">
+            <i class="fa-solid fa-language"></i>
+          </span>
+          <h1 class="text-base sm:text-xl font-bold tracking-tight text-[#1D1D1F]">HSK Flashcards</h1>
 
           <button id="btnOpenSettings"
             class="text-xs px-2.5 py-1 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] border border-black/[0.06] flex items-center gap-1.5 apple-btn"
             title="Cấu hình AI & Đồng bộ (Chỉ Chủ sở hữu / 仅所有者)">
             <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-            <span id="syncStatusText" class="font-medium">Cục bộ</span>
+            <span id="syncStatusText" class="font-medium hidden xs:inline">Cục bộ</span>
             <i id="settingsGearIcon" class="fa-solid fa-sliders ml-0.5 text-[#86868B]"></i>
+          </button>
+        </div>
+
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <!-- Nút chuyển đổi Darkmode / Lightmode trong Header -->
+          <button type="button" class="theme-toggle-btn w-7 h-7 sm:w-8 sm:h-8 rounded-full apple-segmented flex items-center justify-center text-xs apple-btn" title="Chế độ Sáng / Tối • 亮色/暗色模式">
+            <i class="theme-toggle-icon fa-solid fa-moon text-indigo-500"></i>
           </button>
 
           <!-- Nút Tài khoản đang đăng nhập -->
           <button id="btnOpenUserModal"
-            class="text-xs px-2.5 py-1 rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#1D8338] border border-[#34C759]/25 flex items-center gap-1.5 apple-btn"
+            class="text-xs px-2 sm:px-2.5 py-1 rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#1D8338] border border-[#34C759]/25 flex items-center gap-1.5 apple-btn"
             title="Tài khoản & Tiến trình học cá nhân / 个人账户与进度">
             <i class="fa-solid fa-circle-user text-[#34C759]"></i>
-            <span id="currentUserBadgeText" class="font-semibold">User</span>
+            <span id="currentUserBadgeText" class="font-semibold max-w-[70px] sm:max-w-none truncate">User</span>
           </button>
 
           <button id="btnQuickLogout"
-            class="text-xs px-2.5 py-1 rounded-full bg-black/[0.04] hover:bg-[#FF3B30] hover:text-white text-[#86868B] border border-black/[0.05] apple-btn"
+            class="text-xs w-7 h-7 sm:w-auto sm:px-2.5 sm:py-1 rounded-full bg-black/[0.04] hover:bg-[#FF3B30] hover:text-white text-[#86868B] border border-black/[0.05] apple-btn flex items-center justify-center"
             title="Đăng xuất / 退出登录">
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
 
           <!-- Bộ chuyển đổi ngôn ngữ giao diện Việt / Trung / Song ngữ -->
-          <div class="inline-flex items-center apple-segmented text-[11px] font-semibold">
-            <button type="button" data-lang-switch="vi" class="lang-switch-btn px-2.5 py-0.5 rounded-full transition">🇻🇳 Việt</button>
-            <button type="button" data-lang-switch="zh" class="lang-switch-btn px-2.5 py-0.5 rounded-full transition">🇨🇳 中文</button>
-            <button type="button" data-lang-switch="bi" class="lang-switch-btn px-2.5 py-0.5 rounded-full transition">Song ngữ/双语</button>
+          <div class="inline-flex items-center apple-segmented text-[10px] sm:text-[11px] font-semibold">
+            <button type="button" data-lang-switch="vi" class="lang-switch-btn px-2 sm:px-2.5 py-0.5 rounded-full transition">🇻🇳</button>
+            <button type="button" data-lang-switch="zh" class="lang-switch-btn px-2 sm:px-2.5 py-0.5 rounded-full transition">🇨🇳</button>
+            <button type="button" data-lang-switch="bi" class="lang-switch-btn px-2 sm:px-2.5 py-0.5 rounded-full transition">🇻🇳/🇨🇳</button>
           </div>
         </div>
-        <p id="i18nHeaderSubtitle" class="text-[11px] text-[#86868B] mt-0.5">Đồng bộ tiến trình học theo từng User & Tự động tạo Pinyin/Ngữ pháp bằng AI • 按用户同步学习进度 & AI智能解析</p>
       </div>
 
       <!-- Segmented Navigation + Quick Action Pills -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <div class="inline-flex items-center apple-segmented">
+      <div class="flex items-center justify-between gap-1.5 sm:gap-2 flex-wrap">
+        <div class="inline-flex items-center apple-segmented flex-1 sm:flex-initial justify-center">
           <button id="btnStudyMode"
-            class="px-3.5 py-1.5 rounded-full bg-white text-[#1D1D1F] font-semibold text-xs sm:text-sm shadow-sm apple-btn">
+            class="flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-full bg-white text-[#1D1D1F] font-semibold text-xs sm:text-sm shadow-sm apple-btn whitespace-nowrap">
             <i class="fa-solid fa-clone mr-1 text-[#0071E3]"></i> <span id="i18nNavStudy">Lật thẻ • 翻卡</span>
           </button>
           <button id="btnQuizMode"
-            class="px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn">
+            class="flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn whitespace-nowrap">
             <i class="fa-solid fa-bolt mr-1"></i> <span id="i18nNavQuiz">Kiểm tra • 测验</span>
           </button>
           <button id="btnListMode"
-            class="px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn">
+            class="flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn whitespace-nowrap">
             <i class="fa-solid fa-folder-open mr-1"></i> <span id="i18nNavList">Bộ thẻ • 牌组</span>
           </button>
         </div>
 
-        <button id="btnOpenBulkModal"
-          class="px-3.5 py-1.5 rounded-full bg-[#FF9500]/12 hover:bg-[#FF9500]/20 text-[#C93400] border border-[#FF9500]/25 font-semibold text-xs sm:text-sm apple-btn">
-          <i class="fa-solid fa-wand-magic-sparkles mr-1 text-[#FF9500]"></i> <span id="i18nNavBulk">Import AI • 批量导入</span>
-        </button>
-        <button id="btnOpenAddModal"
-          class="px-3.5 py-1.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-xs sm:text-sm shadow-[0_2px_8px_rgba(0,113,227,0.25)] apple-btn">
-          <i class="fa-solid fa-plus mr-1"></i> <span id="i18nNavAdd">Thêm câu • 添加</span>
-        </button>
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button id="btnOpenBulkModal"
+            class="px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#FF9500]/12 hover:bg-[#FF9500]/20 text-[#C93400] border border-[#FF9500]/25 font-semibold text-xs sm:text-sm apple-btn whitespace-nowrap">
+            <i class="fa-solid fa-wand-magic-sparkles mr-1 text-[#FF9500]"></i> <span id="i18nNavBulk">Import AI • 批量导入</span>
+          </button>
+          <button id="btnOpenAddModal"
+            class="px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-xs sm:text-sm shadow-[0_2px_8px_rgba(0,113,227,0.25)] apple-btn whitespace-nowrap">
+            <i class="fa-solid fa-plus mr-1"></i> <span id="i18nNavAdd">Thêm câu • 添加</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
 
   <!-- Main Content -->
-  <main id="appMain" class="hidden max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
+  <main id="appMain" class="hidden max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex-1 w-full">
 
     <!-- Flashcard Mode View -->
-    <div id="viewFlashcards" class="space-y-5">
+    <div id="viewFlashcards" class="space-y-4 sm:space-y-5">
       <!-- Thanh nhắc nhở Lặp lại ngắt quãng (Apple Notification Banner) -->
       <div id="srsBanner"
-        class="apple-surface rounded-[22px] p-4 flex flex-wrap justify-between items-center gap-3">
-        <div class="flex items-center gap-3">
+        class="apple-surface rounded-[22px] p-3.5 sm:p-4 flex flex-wrap justify-between items-center gap-2.5 sm:gap-3">
+        <div class="flex items-center gap-2.5 sm:gap-3">
           <div
-            class="w-10 h-10 rounded-2xl bg-[#FF9500]/12 text-[#FF9500] flex items-center justify-center text-lg shrink-0">
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#FF9500]/12 text-[#FF9500] flex items-center justify-center text-base sm:text-lg shrink-0">
             <i class="fa-solid fa-clock-rotate-left"></i>
           </div>
           <div>
@@ -297,50 +575,50 @@
               <span id="srsDueCountText" class="text-[#FF3B30] ml-0.5">0 câu</span>
               <span id="i18nSrsBannerSuffix">cần ôn tập hôm nay • 今日待复习</span>
             </div>
-            <p id="i18nSrsBannerDesc" class="text-[11px] text-[#86868B]">Bao gồm câu chưa thuộc, câu trả lời sai khi kiểm tra hoặc câu đã đến hạn ôn lại để tránh quên.</p>
+            <p id="i18nSrsBannerDesc" class="text-[11px] text-[#86868B] hidden xs:block">Bao gồm câu chưa thuộc, câu trả lời sai khi kiểm tra hoặc câu đã đến hạn ôn lại để tránh quên.</p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 w-full xs:w-auto justify-end">
           <button id="btnStudySrsNow"
-            class="text-xs px-3.5 py-2 rounded-full bg-[#FF9500] hover:bg-[#F08800] text-white font-semibold shadow-sm apple-btn">
+            class="text-xs px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-[#FF9500] hover:bg-[#F08800] text-white font-semibold shadow-sm apple-btn">
             <i class="fa-solid fa-bolt mr-1"></i> <span id="i18nBtnStudySrsNow">Học lại ngay • 立即复习</span>
           </button>
           <button id="btnQuizSrsNow"
-            class="text-xs px-3.5 py-2 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] font-semibold apple-btn">
-            <i class="fa-solid fa-clipboard-check mr-1 text-[#0071E3]"></i> <span id="i18nBtnQuizSrsNow">Kiểm tra câu cần ôn • 测验待复习</span>
+            class="text-xs px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] font-semibold apple-btn">
+            <i class="fa-solid fa-clipboard-check mr-1 text-[#0071E3]"></i> <span id="i18nBtnQuizSrsNow">Kiểm tra • 测验</span>
           </button>
         </div>
       </div>
 
       <!-- Thanh công cụ Lọc Bộ thẻ, Chỉnh sửa Bộ thẻ & Trạng thái -->
       <div
-        class="apple-surface p-4 rounded-[22px] flex flex-wrap justify-between items-center gap-3">
-        <div class="flex items-center gap-2.5 flex-wrap">
-          <span id="i18nProgressLabel" class="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Tiến độ • 进度</span>
-          <span id="cardProgressText" class="text-sm font-bold text-[#0071E3] bg-[#0071E3]/10 px-3 py-0.5 rounded-full">1 / 40</span>
-          <span id="statsSummaryText" class="text-xs text-[#86868B]"></span>
-        </div>
+        class="apple-surface p-3 sm:p-4 rounded-[22px] flex flex-wrap justify-between items-center gap-2 sm:gap-3">
         <div class="flex items-center gap-2 flex-wrap">
+          <span id="i18nProgressLabel" class="text-xs font-semibold uppercase tracking-wider text-[#86868B] hidden xs:inline">Tiến độ • 进度</span>
+          <span id="cardProgressText" class="text-xs sm:text-sm font-bold text-[#0071E3] bg-[#0071E3]/10 px-2.5 sm:px-3 py-0.5 rounded-full">1 / 40</span>
+          <span id="statsSummaryText" class="text-[11px] sm:text-xs text-[#86868B]"></span>
+        </div>
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <!-- Chọn & Chỉnh sửa Bộ thẻ / Thư mục -->
-          <div class="flex items-center gap-1.5 bg-[#F5F5F7] px-2.5 py-1 rounded-full border border-black/[0.06]">
-            <i class="fa-solid fa-folder text-[#FF9500] text-xs"></i>
+          <div class="flex items-center gap-1 bg-[#F5F5F7] px-2 sm:px-2.5 py-1 rounded-full border border-black/[0.06] max-w-full">
+            <i class="fa-solid fa-folder text-[#FF9500] text-xs shrink-0"></i>
             <select id="studyFolderSelect"
-              class="text-xs bg-transparent font-semibold text-[#1D1D1F] outline-none cursor-pointer pr-1">
+              class="text-xs bg-transparent font-semibold text-[#1D1D1F] outline-none cursor-pointer pr-1 max-w-[110px] sm:max-w-[160px] truncate">
               <option value="all">Tất cả bộ thẻ</option>
             </select>
             <button id="btnNewFolderQuick" title="Tạo bộ thẻ / thư mục mới • 新建牌组"
-              class="text-[11px] px-2 py-0.5 rounded-full bg-white hover:bg-black/[0.04] text-[#0071E3] font-semibold shadow-sm apple-btn">
+              class="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-white hover:bg-black/[0.04] text-[#0071E3] font-semibold shadow-sm apple-btn shrink-0">
               <span id="i18nBtnNewFolderQuick">+ Bộ thẻ</span>
             </button>
             <button id="btnEditFolderQuick" title="Đổi tên / Quản lý các bộ thẻ • 编辑与管理牌组"
-              class="text-[11px] px-2 py-0.5 rounded-full bg-white hover:bg-black/[0.04] text-[#1D1D1F] font-semibold shadow-sm apple-btn">
-              <i class="fa-solid fa-pen text-[10px] text-[#0071E3] mr-0.5"></i><span id="i18nBtnEditFolderQuick">Sửa bộ thẻ</span>
+              class="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-white hover:bg-black/[0.04] text-[#1D1D1F] font-semibold shadow-sm apple-btn shrink-0">
+              <i class="fa-solid fa-pen text-[9px] text-[#0071E3] mr-0.5"></i><span id="i18nBtnEditFolderQuick">Sửa</span>
             </button>
           </div>
 
           <!-- Chọn bộ lọc trạng thái / SRS -->
           <select id="filterSelect"
-            class="text-xs rounded-full px-3 py-1.5 bg-[#F5F5F7] border border-black/[0.06] font-semibold text-[#1D1D1F] outline-none cursor-pointer">
+            class="text-xs rounded-full px-2.5 sm:px-3 py-1.5 bg-[#F5F5F7] border border-black/[0.06] font-semibold text-[#1D1D1F] outline-none cursor-pointer max-w-[130px] sm:max-w-none truncate">
             <option value="all" id="i18nFilterAll">Tất cả trạng thái • 全部状态</option>
             <option value="srs_due" id="i18nFilterSrsDue">🔥 Cần ôn hôm nay (SRS) • 今日待复习</option>
             <option value="new" id="i18nFilterNew">🌱 Mới chưa học • 未学新卡</option>
@@ -351,71 +629,71 @@
 
           <!-- Đổi chiều mặt thẻ (Trung -> Việt hoặc Việt -> Trung) -->
           <button id="btnToggleDirection" title="Đổi chiều mặt trước / mặt sau của thẻ • 切换卡片正反面方向"
-            class="text-xs px-3 py-1.5 rounded-full bg-[#34C759]/12 text-[#1D8338] border border-[#34C759]/25 font-semibold apple-btn flex items-center gap-1">
+            class="text-xs px-2.5 sm:px-3 py-1.5 rounded-full bg-[#34C759]/12 text-[#1D8338] border border-[#34C759]/25 font-semibold apple-btn flex items-center gap-1 shrink-0">
             <i class="fa-solid fa-right-left"></i> <span id="directionLabel">🇨🇳 ➔ 🇻🇳</span>
           </button>
 
           <!-- Làm mờ / Hiện rõ Pinyin -->
           <button id="btnToggleBlurPinyin" title="Làm mờ hoặc hiện rõ phiên âm Pinyin • 模糊/清晰显示拼音"
-            class="text-xs px-3 py-1.5 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-semibold apple-btn flex items-center gap-1">
-            <i id="blurPinyinIcon" class="fa-solid fa-eye"></i> <span id="blurPinyinLabel">Pinyin: Rõ</span>
+            class="text-xs px-2.5 sm:px-3 py-1.5 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-semibold apple-btn flex items-center gap-1 shrink-0">
+            <i id="blurPinyinIcon" class="fa-solid fa-eye"></i> <span id="blurPinyinLabel" class="hidden xs:inline">Pinyin: Rõ</span>
           </button>
 
           <!-- Bật/tắt tự động phát âm mặt tiếng Trung -->
           <button id="btnToggleAutoSpeak" title="Tự động phát âm khi ở mặt Tiếng Trung • 中文面自动发音"
-            class="text-xs px-3 py-1.5 rounded-full bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 font-semibold apple-btn flex items-center gap-1">
-            <i class="fa-solid fa-volume-high"></i> <span id="autoSpeakLabel">Tự đọc: BẬT</span>
+            class="text-xs px-2.5 sm:px-3 py-1.5 rounded-full bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 font-semibold apple-btn flex items-center gap-1 shrink-0">
+            <i class="fa-solid fa-volume-high"></i> <span id="autoSpeakLabel" class="hidden xs:inline">Tự đọc: BẬT</span>
           </button>
 
           <!-- Chỉnh sửa thẻ đang hiển thị -->
           <button id="btnEditCurrentCard" title="Chỉnh sửa nội dung thẻ này (Chữ Hán, Pinyin, Nghĩa, Ngữ pháp, Bộ thẻ) • 编辑当前卡片"
-            class="text-xs px-3 py-1.5 rounded-full bg-[#0071E3]/10 hover:bg-[#0071E3]/20 text-[#0071E3] border border-[#0071E3]/20 font-semibold apple-btn flex items-center gap-1">
-            <i class="fa-solid fa-pen-to-square"></i> <span id="i18nBtnEditCurrentCard">Sửa thẻ • 编辑</span>
+            class="text-xs px-2.5 sm:px-3 py-1.5 rounded-full bg-[#0071E3]/10 hover:bg-[#0071E3]/20 text-[#0071E3] border border-[#0071E3]/20 font-semibold apple-btn flex items-center gap-1 shrink-0">
+            <i class="fa-solid fa-pen-to-square"></i> <span id="i18nBtnEditCurrentCard">Sửa</span>
           </button>
 
           <button id="btnReloadCloud" title="Tải lại từ Cloud / 从云端重新加载"
-            class="w-8 h-8 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] flex items-center justify-center text-xs apple-btn">
+            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] flex items-center justify-center text-xs apple-btn shrink-0">
             <i class="fa-solid fa-rotate"></i>
           </button>
           <button id="btnSpeak" title="Đọc lại câu này / 朗读此句"
-            class="w-8 h-8 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white flex items-center justify-center text-xs shadow-sm apple-btn">
+            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white flex items-center justify-center text-xs shadow-sm apple-btn shrink-0">
             <i class="fa-solid fa-volume-high"></i>
           </button>
         </div>
       </div>
 
-      <!-- Flashcard Interactive Area (Apple Card Aesthetic) -->
+      <!-- Flashcard Interactive Area (Apple Card Aesthetic & Mobile Responsive Height) -->
       <div class="flex justify-center items-center py-1">
-        <div id="cardContainer" class="w-full max-w-2xl h-80 sm:h-[340px] perspective-1000 cursor-pointer select-none">
+        <div id="cardContainer" class="w-full max-w-2xl h-[310px] xs:h-[330px] sm:h-[350px] perspective-1000 cursor-pointer select-none">
           <div id="cardInner" class="relative w-full h-full transform-style-3d">
 
             <!-- Mặt Trước -->
             <div
-              class="absolute w-full h-full apple-card-front rounded-[30px] p-7 sm:p-8 flex flex-col justify-between backface-hidden">
+              class="absolute w-full h-full apple-card-front rounded-[26px] sm:rounded-[30px] p-5 sm:p-8 flex flex-col justify-between backface-hidden">
               <div class="flex justify-between items-center gap-2 flex-wrap">
                 <div class="flex items-center gap-2">
                   <span id="cardFrontSideBadge"
-                    class="text-[11px] font-semibold uppercase tracking-wider text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full">
+                    class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-[#0071E3] bg-[#0071E3]/10 px-2.5 sm:px-3 py-1 rounded-full">
                     Mặt Trước (Tiếng Trung)
                   </span>
                   <span id="cardFolderBadge"
-                    class="text-xs font-semibold text-[#1D1D1F] bg-black/[0.04] border border-black/[0.06] px-2.5 py-1 rounded-full">
+                    class="text-[11px] sm:text-xs font-semibold text-[#1D1D1F] bg-black/[0.04] border border-black/[0.06] px-2 sm:px-2.5 py-1 rounded-full max-w-[130px] truncate">
                     <i class="fa-solid fa-folder text-[#FF9500] mr-1"></i>Mặc định
                   </span>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <span id="srsNextReviewBadge"
-                    class="text-[11px] px-2.5 py-1 rounded-full font-medium bg-black/[0.04] text-[#86868B]"></span>
-                  <span id="levelBadge" class="text-xs px-2.5 py-1 rounded-full font-semibold bg-black/[0.05] text-[#1D1D1F]">Mới học</span>
+                    class="text-[10px] sm:text-[11px] px-2 sm:px-2.5 py-1 rounded-full font-medium bg-black/[0.04] text-[#86868B]"></span>
+                  <span id="levelBadge" class="text-[11px] sm:text-xs px-2 sm:px-2.5 py-1 rounded-full font-semibold bg-black/[0.05] text-[#1D1D1F]">Mới học</span>
                 </div>
               </div>
-              <div class="text-center my-auto space-y-3.5 px-2">
-                <h2 id="cardHanzi" class="text-2xl sm:text-4xl font-bold text-[#1D1D1F] leading-snug tracking-tight">
+              <div class="text-center my-auto space-y-2.5 sm:space-y-3.5 px-2">
+                <h2 id="cardHanzi" class="text-2xl xs:text-3xl sm:text-4xl font-bold text-[#1D1D1F] leading-snug tracking-tight">
                 </h2>
-                <p id="cardPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="text-base sm:text-lg text-[#0071E3] font-medium tracking-wide transition duration-200"></p>
+                <p id="cardPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="text-sm xs:text-base sm:text-lg text-[#0071E3] font-medium tracking-wide transition duration-200"></p>
               </div>
               <div class="text-center">
-                <span id="cardFrontHintText" class="text-xs text-[#86868B]">
+                <span id="cardFrontHintText" class="text-[11px] sm:text-xs text-[#86868B]">
                   <i class="fa-solid fa-hand-pointer mr-1 text-[#0071E3]"></i> Bấm để lật xem nghĩa & cấu trúc ngữ pháp
                 </span>
               </div>
@@ -423,21 +701,21 @@
 
             <!-- Mặt Sau (Apple Midnight Titanium) -->
             <div
-              class="absolute w-full h-full apple-card-back text-white rounded-[30px] p-7 sm:p-8 flex flex-col justify-between backface-hidden rotate-y-180">
+              class="absolute w-full h-full apple-card-back text-white rounded-[26px] sm:rounded-[30px] p-5 sm:p-8 flex flex-col justify-between backface-hidden rotate-y-180">
               <div class="flex justify-between items-center">
                 <span id="cardBackSideBadge"
-                  class="text-[11px] font-semibold uppercase tracking-wider text-white/80 bg-white/10 px-3 py-1 rounded-full">
+                  class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-white/80 bg-white/10 px-2.5 sm:px-3 py-1 rounded-full">
                 </span>
-                <span id="i18nFlipBackHint" class="text-xs text-white/60">Bấm để lật lại • 点击翻回</span>
+                <span id="i18nFlipBackHint" class="text-[11px] sm:text-xs text-white/60">Bấm để lật lại • 点击翻回</span>
               </div>
-              <div class="text-center my-auto space-y-3 overflow-y-auto max-h-48 px-2">
-                <p id="cardMeaning" class="text-xl sm:text-2xl font-bold text-[#30D158]"></p>
-                <p id="cardBackPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="hidden text-sm sm:text-base text-[#FFD60A] font-medium tracking-wide transition duration-200"></p>
+              <div class="text-center my-auto space-y-2 sm:space-y-3 overflow-y-auto max-h-40 sm:max-h-48 px-2">
+                <p id="cardMeaning" class="text-lg xs:text-xl sm:text-2xl font-bold text-[#30D158]"></p>
+                <p id="cardBackPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="hidden text-xs xs:text-sm sm:text-base text-[#FFD60A] font-medium tracking-wide transition duration-200"></p>
                 <div id="cardGrammar"
-                  class="text-xs sm:text-sm text-white/90 bg-white/[0.08] backdrop-blur-md p-3.5 rounded-2xl border border-white/10 text-left leading-relaxed">
+                  class="text-[11px] sm:text-sm text-white/90 bg-white/[0.08] backdrop-blur-md p-3 sm:p-3.5 rounded-2xl border border-white/10 text-left leading-relaxed">
                 </div>
               </div>
-              <div id="i18nCardBackFooter" class="text-center text-xs text-white/60">
+              <div id="i18nCardBackFooter" class="text-center text-[10px] sm:text-xs text-white/60">
                 Đánh giá bên dưới để lên lịch Lặp lại ngắt quãng (SRS) • 请在下方评估记忆程度 👇
               </div>
             </div>
@@ -446,31 +724,39 @@
         </div>
       </div>
 
-      <!-- Spaced Repetition Buttons (Apple Pill Buttons) -->
-      <div class="flex flex-wrap justify-center items-center gap-3 max-w-2xl mx-auto">
-        <button id="btnPrev"
-          class="w-11 h-11 rounded-2xl apple-surface text-[#1D1D1F] font-medium hover:bg-white flex items-center justify-center apple-btn">
-          <i class="fa-solid fa-chevron-left"></i>
-        </button>
-        <button id="btnHard"
-          class="flex-1 py-2.5 px-3 rounded-2xl bg-white text-[#FF3B30] border border-[#FF3B30]/20 shadow-sm font-semibold hover:bg-[#FFF2F2] apple-btn text-sm">
-          <div><i class="fa-solid fa-rotate-left mr-1"></i> <span id="i18nBtnHardLabel">Chưa nhớ • 没记住</span></div>
-          <div id="i18nBtnHardSubtext" class="text-[10px] font-normal text-[#FF3B30]/80">Ôn lại ngay hôm nay • 今日重温</div>
-        </button>
-        <button id="btnGood"
-          class="flex-1 py-2.5 px-3 rounded-2xl bg-white text-[#FF9500] border border-[#FF9500]/25 shadow-sm font-semibold hover:bg-[#FFF9EB] apple-btn text-sm">
-          <div><i class="fa-solid fa-clock mr-1"></i> <span id="i18nBtnGoodLabel">Bình thường • 一般</span></div>
-          <div id="btnGoodSubtext" class="text-[10px] font-normal text-[#FF9500]/90">Ôn sau 1-3 ngày</div>
-        </button>
-        <button id="btnEasy"
-          class="flex-1 py-2.5 px-3 rounded-2xl bg-white text-[#248A3D] border border-[#34C759]/25 shadow-sm font-semibold hover:bg-[#F2FBF4] apple-btn text-sm">
-          <div><i class="fa-solid fa-check mr-1"></i> <span id="i18nBtnEasyLabel">Đã nhớ (Dễ) • 已记住</span></div>
-          <div id="btnEasySubtext" class="text-[10px] font-normal text-[#248A3D]/80">Ôn sau 3-7+ ngày</div>
-        </button>
-        <button id="btnNext"
-          class="w-11 h-11 rounded-2xl apple-surface text-[#1D1D1F] font-medium hover:bg-white flex items-center justify-center apple-btn">
-          <i class="fa-solid fa-chevron-right"></i>
-        </button>
+      <!-- Spaced Repetition Buttons (Apple Pill Buttons & Mobile Responsive Layout) -->
+      <div class="w-full max-w-2xl mx-auto space-y-2 sm:space-y-2.5">
+        <!-- 3 nút đánh giá mức độ ghi nhớ SRS (Rộng rãi, dễ bấm trên điện thoại) -->
+        <div class="grid grid-cols-3 gap-1.5 sm:gap-3">
+          <button id="btnHard"
+            class="py-2.5 px-1.5 sm:px-2 rounded-2xl bg-white text-[#FF3B30] border border-[#FF3B30]/20 shadow-sm font-semibold hover:bg-[#FFF2F2] apple-btn text-xs sm:text-sm text-center">
+            <div><i class="fa-solid fa-rotate-left mr-1"></i> <span id="i18nBtnHardLabel">Chưa nhớ</span></div>
+            <div id="i18nBtnHardSubtext" class="text-[9px] sm:text-[10px] font-normal text-[#FF3B30]/80">Ôn lại hôm nay</div>
+          </button>
+          <button id="btnGood"
+            class="py-2.5 px-1.5 sm:px-2 rounded-2xl bg-white text-[#FF9500] border border-[#FF9500]/25 shadow-sm font-semibold hover:bg-[#FFF9EB] apple-btn text-xs sm:text-sm text-center">
+            <div><i class="fa-solid fa-clock mr-1"></i> <span id="i18nBtnGoodLabel">Bình thường</span></div>
+            <div id="btnGoodSubtext" class="text-[9px] sm:text-[10px] font-normal text-[#FF9500]/90">Ôn sau 1-3 ngày</div>
+          </button>
+          <button id="btnEasy"
+            class="py-2.5 px-1.5 sm:px-2 rounded-2xl bg-white text-[#248A3D] border border-[#34C759]/25 shadow-sm font-semibold hover:bg-[#F2FBF4] apple-btn text-xs sm:text-sm text-center">
+            <div><i class="fa-solid fa-check mr-1"></i> <span id="i18nBtnEasyLabel">Đã nhớ (Dễ)</span></div>
+            <div id="btnEasySubtext" class="text-[9px] sm:text-[10px] font-normal text-[#248A3D]/80">Ôn sau 3-7+ ngày</div>
+          </button>
+        </div>
+
+        <!-- Hàng điều hướng Trước / Sau + Chỉ số tiến độ mobile -->
+        <div class="flex items-center justify-between gap-3 px-1">
+          <button id="btnPrev"
+            class="px-3.5 sm:px-4 py-2 rounded-2xl apple-surface text-[#1D1D1F] font-semibold hover:bg-white flex items-center justify-center text-xs sm:text-sm apple-btn shadow-sm">
+            <i class="fa-solid fa-chevron-left mr-1.5"></i> <span id="i18nBtnPrevLabel">Trước • 上一句</span>
+          </button>
+          <span id="mobileProgressIndicator" class="text-xs text-[#86868B] font-bold">1 / 40</span>
+          <button id="btnNext"
+            class="px-3.5 sm:px-4 py-2 rounded-2xl apple-surface text-[#1D1D1F] font-semibold hover:bg-white flex items-center justify-center text-xs sm:text-sm apple-btn shadow-sm">
+            <span id="i18nBtnNextLabel">Sau • 下一句</span> <i class="fa-solid fa-chevron-right ml-1.5"></i>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -633,27 +919,27 @@
 
       <!-- Thanh tìm kiếm & lọc danh sách thẻ -->
       <div
-        class="apple-surface p-4 rounded-[24px] flex flex-wrap justify-between items-center gap-3">
-        <div class="flex items-center gap-3 flex-wrap">
-          <h3 id="i18nListHeaderTitle" class="font-bold text-[#1D1D1F]">Danh sách toàn bộ thẻ câu • 全部卡片列表</h3>
+        class="apple-surface p-3.5 sm:p-4 rounded-[24px] flex flex-wrap justify-between items-center gap-2.5 sm:gap-3">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <h3 id="i18nListHeaderTitle" class="font-bold text-sm sm:text-base text-[#1D1D1F]">Danh sách toàn bộ thẻ câu • 全部卡片列表</h3>
           <span id="totalCardCount"
-            class="text-xs font-bold text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full"></span>
+            class="text-[11px] sm:text-xs font-bold text-[#0071E3] bg-[#0071E3]/10 px-2.5 sm:px-3 py-1 rounded-full"></span>
         </div>
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto">
           <select id="listFolderSelect"
-            class="text-xs border border-black/[0.08] rounded-full px-3 py-2 bg-[#F5F5F7] text-[#1D1D1F] font-semibold outline-none">
+            class="text-xs border border-black/[0.08] rounded-full px-2.5 sm:px-3 py-2 bg-[#F5F5F7] text-[#1D1D1F] font-semibold outline-none flex-1 sm:flex-initial max-w-full">
             <option value="all">📁 Tất cả bộ thẻ</option>
           </select>
           <input type="text" id="searchListInput" placeholder="Tìm chữ Hán, Pinyin, nghĩa... / 搜索..."
-            class="text-xs apple-input rounded-full px-3.5 py-2 w-52">
+            class="text-xs apple-input rounded-full px-3 py-2 flex-1 sm:w-52">
           <input type="file" id="inputImportJson" accept=".json,application/json" class="hidden">
           <button id="btnImportJson"
-            class="text-xs px-3.5 py-2 rounded-full bg-[#0071E3]/10 hover:bg-[#0071E3]/20 text-[#0071E3] font-semibold apple-btn">
-            <i class="fa-solid fa-file-import mr-1"></i> <span id="i18nBtnImportJson">Nhập JSON • 导入</span>
+            class="text-xs px-2.5 sm:px-3.5 py-2 rounded-full bg-[#0071E3]/10 hover:bg-[#0071E3]/20 text-[#0071E3] font-semibold apple-btn shrink-0">
+            <i class="fa-solid fa-file-import mr-1"></i> <span id="i18nBtnImportJson">Nhập JSON</span>
           </button>
           <button id="btnExportJson"
-            class="text-xs px-3.5 py-2 rounded-full bg-black/[0.05] hover:bg-black/[0.09] text-[#1D1D1F] font-semibold apple-btn">
-            <i class="fa-solid fa-download mr-1"></i> <span id="i18nBtnExportJson">Xuất JSON • 导出</span>
+            class="text-xs px-2.5 sm:px-3.5 py-2 rounded-full bg-black/[0.05] hover:bg-black/[0.09] text-[#1D1D1F] font-semibold apple-btn shrink-0">
+            <i class="fa-solid fa-download mr-1"></i> <span id="i18nBtnExportJson">Xuất JSON</span>
           </button>
         </div>
       </div>
@@ -960,6 +1246,49 @@
       if (uiLang === 'vi') return viStr;
       if (uiLang === 'zh') return zhStr;
       return `${viStr} • ${zhStr}`;
+    }
+
+    // =========================================================================
+    // HỆ THỐNG GIAO DIỆN SÁNG / TỐI (APPLE DARK MODE)
+    // =========================================================================
+    function applyThemeUI(theme) {
+      const isDark = theme === 'dark';
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      localStorage.setItem('hsk_theme', theme);
+
+      document.querySelectorAll('.theme-toggle-icon').forEach(icon => {
+        if (isDark) {
+          icon.className = 'theme-toggle-icon fa-solid fa-sun text-amber-300';
+        } else {
+          icon.className = 'theme-toggle-icon fa-solid fa-moon text-indigo-500';
+        }
+      });
+    }
+
+    function toggleThemeUI() {
+      const isCurrentlyDark = document.documentElement.classList.contains('dark');
+      applyThemeUI(isCurrentlyDark ? 'light' : 'dark');
+    }
+
+    function initThemeUI() {
+      const savedTheme = localStorage.getItem('hsk_theme');
+      if (savedTheme === 'dark' || savedTheme === 'light') {
+        applyThemeUI(savedTheme);
+      } else {
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyThemeUI(prefersDark ? 'dark' : 'light');
+      }
+
+      document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          toggleThemeUI();
+        });
+      });
     }
 
     // Dữ liệu 43 câu mặc định ban đầu
@@ -2125,6 +2454,10 @@ ${JSON.stringify(sentences)}`;
       srsNextReviewBadge.textContent = formatNextReviewText(card);
 
       cardProgressText.textContent = `${currentIndex + 1} / ${currentFilteredCards.length}`;
+      const mobileProgressIndicator = document.getElementById('mobileProgressIndicator');
+      if (mobileProgressIndicator) {
+        mobileProgressIndicator.textContent = `${currentIndex + 1} / ${currentFilteredCards.length}`;
+      }
 
       if (card.status === 'mastered') {
         levelBadge.textContent = t("Đã thuộc", "已掌握");
@@ -3976,6 +4309,8 @@ Chỉ trả về JSON hợp lệ (không giải thích ngoài JSON):
       setElText('i18nBtnHardSubtext', 'Ôn lại ngay hôm nay', '今日重温');
       setElText('i18nBtnGoodLabel', 'Bình thường', '一般');
       setElText('i18nBtnEasyLabel', 'Đã nhớ (Dễ)', '已记住（简单）');
+      setElText('i18nBtnPrevLabel', 'Trước', '上一句');
+      setElText('i18nBtnNextLabel', 'Sau', '下一句');
 
       // 4. Màn hình Kiểm tra (Quiz)
       setElText('i18nQuizHeaderTitle', 'Luyện tập & Kiểm tra', '练习与测验');
@@ -4058,6 +4393,7 @@ Chỉ trả về JSON hợp lệ (không giải thích ngoài JSON):
 
     // Tự động khôi phục phiên đăng nhập hoặc yêu cầu xác thực trước khi vào học
     async function initAuthAndStartApp() {
+      initThemeUI();
       applyLanguageUI(uiLang);
       initSupabase();
       const rawSession = localStorage.getItem('hsk_auth_session') || sessionStorage.getItem('hsk_auth_session');
