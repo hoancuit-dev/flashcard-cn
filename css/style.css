@@ -1,0 +1,353 @@
+:root {
+  --apple-bg: #F5F5F7;
+  --apple-text: #1D1D1F;
+  --apple-subtext: #86868B;
+  --apple-surface: rgba(255, 255, 255, 0.88);
+  --apple-glass-header: rgba(255, 255, 255, 0.82);
+  --apple-border: rgba(0, 0, 0, 0.06);
+  --apple-input-bg: #F5F5F7;
+  --apple-card-front-bg: linear-gradient(180deg, #FFFFFF 0%, #FAFAFC 100%);
+  --apple-card-back-bg: linear-gradient(160deg, #1D1D1F 0%, #2C2C2E 100%);
+  --apple-segmented-bg: rgba(118, 118, 128, 0.12);
+  --apple-blue: #0071E3;
+  --apple-blue-hover: #0077ED;
+  --apple-green: #34C759;
+  --apple-orange: #FF9500;
+  --apple-red: #FF3B30;
+}
+
+html.dark {
+  --apple-bg: #000000;
+  --apple-text: #F5F5F7;
+  --apple-subtext: #8E8E93;
+  --apple-surface: rgba(28, 28, 30, 0.90);
+  --apple-glass-header: rgba(20, 20, 22, 0.85);
+  --apple-border: rgba(255, 255, 255, 0.12);
+  --apple-input-bg: #2C2C2E;
+  --apple-card-front-bg: linear-gradient(180deg, #1C1C1E 0%, #242426 100%);
+  --apple-card-back-bg: linear-gradient(160deg, #0E0E10 0%, #1A1A1D 100%);
+  --apple-segmented-bg: rgba(255, 255, 255, 0.12);
+}
+
+body {
+  font-family: "SF Pro VN", "SF Pro Display", "SF Pro Text", "Be Vietnam Pro", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  background-color: var(--apple-bg);
+  background-image:
+    radial-gradient(at 12% 8%, rgba(0, 113, 227, 0.06) 0px, transparent 45%),
+    radial-gradient(at 88% 12%, rgba(88, 86, 214, 0.06) 0px, transparent 45%),
+    radial-gradient(at 50% 90%, rgba(52, 199, 89, 0.04) 0px, transparent 50%);
+  background-attachment: fixed;
+  color: var(--apple-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+html.dark body {
+  background-image:
+    radial-gradient(at 12% 8%, rgba(10, 132, 255, 0.12) 0px, transparent 45%),
+    radial-gradient(at 88% 12%, rgba(94, 92, 230, 0.12) 0px, transparent 45%),
+    radial-gradient(at 50% 90%, rgba(48, 209, 88, 0.07) 0px, transparent 50%);
+}
+
+.perspective-1000 {
+  perspective: 1200px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.apple-glass-header {
+  background: var(--apple-glass-header);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-bottom: 1px solid var(--apple-border);
+}
+
+.apple-surface {
+  background: var(--apple-surface);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--apple-border);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+html.dark .apple-surface {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.apple-card-front {
+  background: var(--apple-card-front-bg);
+  border: 1px solid var(--apple-border);
+  box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.08), 0 4px 16px -2px rgba(0, 0, 0, 0.03);
+}
+
+html.dark .apple-card-front {
+  box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.55), 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+}
+
+.apple-card-back {
+  background: var(--apple-card-back-bg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.26);
+}
+
+html.dark .apple-card-back {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.7);
+}
+
+.apple-segmented {
+  background: var(--apple-segmented-bg);
+  padding: 3px;
+  border-radius: 9999px;
+}
+
+.apple-input {
+  background: var(--apple-input-bg);
+  border: 1px solid var(--apple-border);
+  color: var(--apple-text);
+  transition: all 0.2s ease;
+}
+
+.apple-input:focus {
+  background: #FFFFFF;
+  border-color: #0071E3;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.14);
+  outline: none;
+}
+
+html.dark .apple-input:focus {
+  background: #1C1C1E;
+  border-color: #0A84FF;
+  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.25);
+}
+
+.apple-btn {
+  transition: all 0.18s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.apple-btn:active {
+  transform: scale(0.97);
+}
+
+/* Dark Mode Utility Classes Overrides */
+html.dark .text-\[\#1D1D1F\] {
+  color: #F5F5F7 !important;
+}
+
+html.dark .text-\[\#86868B\] {
+  color: #8E8E93 !important;
+}
+
+html.dark .bg-\[\#F5F5F7\] {
+  background-color: #2C2C2E !important;
+}
+
+html.dark .bg-\[\#F5F5F7\]\/80,
+html.dark .bg-\[\#F5F5F7\]\/60 {
+  background-color: rgba(44, 44, 46, 0.75) !important;
+}
+
+html.dark .bg-\[\#E8E8ED\]\/70 {
+  background-color: rgba(44, 44, 46, 0.85) !important;
+}
+
+html.dark .border-black\/\[0\.05\],
+html.dark .border-black\/\[0\.06\],
+html.dark .border-black\/\[0\.08\] {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .divide-black\/\[0\.05\],
+html.dark .divide-black\/\[0\.06\] {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .bg-black\/\[0\.04\],
+html.dark .bg-black\/\[0\.05\] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #F5F5F7 !important;
+}
+
+html.dark .bg-black\/\[0\.08\],
+html.dark .bg-black\/\[0\.09\],
+html.dark .bg-black\/\[0\.1\] {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+
+html.dark .bg-white\/90,
+html.dark .bg-white\/95 {
+  background-color: rgba(28, 28, 30, 0.94) !important;
+}
+
+html.dark .bg-white {
+  background-color: #2C2C2E !important;
+  color: #F5F5F7 !important;
+}
+
+/* Modals & Dialogs in Dark Mode */
+html.dark #modalAddCard > div,
+html.dark #modalBulkImport > div,
+html.dark #modalSettings > div,
+html.dark #modalUserAccount > div {
+  background-color: rgba(28, 28, 30, 0.96) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Auth Screen in Dark Mode */
+html.dark #authScreen {
+  background-color: #000000 !important;
+  background-image:
+    radial-gradient(at 20% 20%, rgba(10, 132, 255, 0.16) 0px, transparent 50%),
+    radial-gradient(at 80% 80%, rgba(94, 92, 230, 0.16) 0px, transparent 50%) !important;
+}
+
+html.dark #authScreen > div {
+  background-color: rgba(28, 28, 30, 0.94) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* Apple Segmented Active Pill in Dark Mode */
+html.dark .apple-segmented > button.bg-white,
+html.dark .apple-segmented button.bg-white {
+  background-color: #3A3A3C !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .apple-segmented > button:not(.bg-white),
+html.dark .apple-segmented button:not(.bg-white) {
+  color: #8E8E93 !important;
+}
+
+html.dark .apple-segmented > button:not(.bg-white):hover,
+html.dark .apple-segmented button:not(.bg-white):hover {
+  color: #FFFFFF !important;
+}
+
+/* Flashcard SRS Buttons in Dark Mode */
+html.dark #btnHard {
+  background-color: #241A1A !important;
+  color: #FF453A !important;
+  border-color: rgba(255, 69, 58, 0.35) !important;
+}
+html.dark #btnHard:hover {
+  background-color: #331F1F !important;
+}
+
+html.dark #btnGood {
+  background-color: #242017 !important;
+  color: #FF9F0A !important;
+  border-color: rgba(255, 159, 10, 0.35) !important;
+}
+html.dark #btnGood:hover {
+  background-color: #332B1C !important;
+}
+
+html.dark #btnEasy {
+  background-color: #162419 !important;
+  color: #30D158 !important;
+  border-color: rgba(48, 209, 88, 0.35) !important;
+}
+html.dark #btnEasy:hover {
+  background-color: #1F3323 !important;
+}
+
+/* Quiz questions & options in Dark Mode */
+html.dark #quizOptions button {
+  background-color: #242426;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #F5F5F7;
+}
+html.dark #quizOptions button:hover {
+  background-color: #2C2C2E;
+  border-color: #0A84FF;
+}
+html.dark #quizOptions button .text-slate-800 {
+  color: #F5F5F7 !important;
+}
+html.dark #quizOptions button .text-indigo-600 {
+  color: #64D2FF !important;
+}
+html.dark #quizQuestion {
+  color: #F5F5F7 !important;
+}
+html.dark #quizPromptBox {
+  background-color: #242426 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html.dark #quizRevealHanzi,
+html.dark #quizTargetHanzi {
+  color: #F5F5F7 !important;
+}
+
+/* Decks & Cards List in Dark Mode */
+html.dark [data-deck-card] {
+  background-color: #242426 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+html.dark [data-deck-card]:hover {
+  background-color: #2C2C2E !important;
+}
+html.dark [data-deck-card] button {
+  background-color: #3A3A3C !important;
+  color: #F5F5F7 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+html.dark [data-deck-card] button:hover {
+  background-color: #0A84FF !important;
+  color: #FFFFFF !important;
+}
+html.dark #allCardsTable > div:hover {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+html.dark #allCardsTable button {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #F5F5F7 !important;
+}
+html.dark #allCardsTable button:hover {
+  background-color: #0A84FF !important;
+  color: #FFFFFF !important;
+}
+
+/* Banners in Dark Mode */
+html.dark #authFirstSetupBanner {
+  background-color: rgba(255, 159, 10, 0.15) !important;
+  border-color: rgba(255, 159, 10, 0.35) !important;
+  color: #FFD60A !important;
+}
+html.dark #authFirstSetupBanner p {
+  color: #FFE680 !important;
+}
+html.dark #authErrorMsg {
+  background-color: rgba(255, 69, 58, 0.15) !important;
+  border-color: rgba(255, 69, 58, 0.35) !important;
+  color: #FF453A !important;
+}
+
+/* Responsive adjustments for mobile screens (iPhone SE, 320px - 430px) */
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS Safari */
+  }
+
+  .perspective-1000 {
+    perspective: 800px;
+  }
+}
