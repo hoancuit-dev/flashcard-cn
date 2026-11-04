@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flashcards Tiếng Trung - Cloud Sync & AI Auto-Fill</title>
+  <title>HSK Flashcards — Apple Design</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Supabase SDK -->
@@ -12,61 +12,142 @@
   <!-- Pinyin-pro (Tự tạo Pinyin tức thì không cần mạng) -->
   <script src="https://unpkg.com/pinyin-pro@3.19.6/dist/index.js"></script>
   <style>
+    :root {
+      --apple-bg: #F5F5F7;
+      --apple-text: #1D1D1F;
+      --apple-subtext: #86868B;
+      --apple-blue: #0071E3;
+      --apple-blue-hover: #0077ED;
+      --apple-green: #34C759;
+      --apple-orange: #FF9500;
+      --apple-red: #FF3B30;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background-color: var(--apple-bg);
+      background-image:
+        radial-gradient(at 12% 8%, rgba(0, 113, 227, 0.06) 0px, transparent 45%),
+        radial-gradient(at 88% 12%, rgba(88, 86, 214, 0.06) 0px, transparent 45%),
+        radial-gradient(at 50% 90%, rgba(52, 199, 89, 0.04) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--apple-text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
     .perspective-1000 {
-      perspective: 1000px;
+      perspective: 1200px;
     }
 
     .transform-style-3d {
       transform-style: preserve-3d;
+      transition: transform 0.62s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     .backface-hidden {
       backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
     }
 
     .rotate-y-180 {
       transform: rotateY(180deg);
     }
+
+    .apple-glass-header {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: saturate(180%) blur(24px);
+      -webkit-backdrop-filter: saturate(180%) blur(24px);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .apple-surface {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .apple-card-front {
+      background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFC 100%);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.08), 0 4px 16px -2px rgba(0, 0, 0, 0.03);
+    }
+
+    .apple-card-back {
+      background: linear-gradient(160deg, #1D1D1F 0%, #2C2C2E 100%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 24px 54px -12px rgba(0, 0, 0, 0.26);
+    }
+
+    .apple-segmented {
+      background: rgba(118, 118, 128, 0.12);
+      padding: 3px;
+      border-radius: 9999px;
+    }
+
+    .apple-input {
+      background: #F5F5F7;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
+    }
+
+    .apple-input:focus {
+      background: #FFFFFF;
+      border-color: #0071E3;
+      box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.14);
+      outline: none;
+    }
+
+    .apple-btn {
+      transition: all 0.18s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .apple-btn:active {
+      transform: scale(0.97);
+    }
   </style>
 </head>
 
-<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col font-sans">
+<body class="min-h-screen flex flex-col">
 
-  <!-- Màn hình Xác thực Đăng nhập / Đăng ký (Chặn trước khi vào màn hình chính) -->
-  <div id="authScreen" class="fixed inset-0 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 z-50 flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5 border border-indigo-100 relative">
+  <!-- Màn hình Xác thực Đăng nhập / Đăng ký (Phong cách Apple ID / iCloud) -->
+  <div id="authScreen" class="fixed inset-0 bg-[#F5F5F7] z-50 flex items-center justify-center p-4 overflow-y-auto"
+    style="background-image: radial-gradient(at 20% 20%, rgba(0, 113, 227, 0.10) 0px, transparent 50%), radial-gradient(at 80% 80%, rgba(88, 86, 214, 0.10) 0px, transparent 50%);">
+    <div class="bg-white/90 backdrop-blur-2xl w-full max-w-md rounded-[30px] shadow-[0_24px_60px_rgba(0,0,0,0.08)] p-7 sm:p-9 space-y-5 border border-black/[0.06] relative">
       <!-- Nút chọn ngôn ngữ trên trang Đăng nhập -->
       <div class="flex justify-end">
-        <div class="inline-flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px] font-semibold">
-          <button type="button" data-lang-switch="vi" class="lang-switch-btn px-2 py-1 rounded-md transition">🇻🇳 Việt</button>
-          <button type="button" data-lang-switch="zh" class="lang-switch-btn px-2 py-1 rounded-md transition">🇨🇳 中文</button>
-          <button type="button" data-lang-switch="bi" class="lang-switch-btn px-2 py-1 rounded-md transition">🇻🇳/🇨🇳 Song ngữ</button>
+        <div class="inline-flex items-center apple-segmented text-[11px] font-semibold">
+          <button type="button" data-lang-switch="vi" class="lang-switch-btn px-2.5 py-1 rounded-full transition">🇻🇳 Việt</button>
+          <button type="button" data-lang-switch="zh" class="lang-switch-btn px-2.5 py-1 rounded-full transition">🇨🇳 中文</button>
+          <button type="button" data-lang-switch="bi" class="lang-switch-btn px-2.5 py-1 rounded-full transition">🇻🇳/🇨🇳 Song ngữ</button>
         </div>
       </div>
 
       <div class="text-center space-y-1.5">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 text-3xl shadow-sm mb-1">
-          🇨🇳
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-[20px] bg-gradient-to-b from-[#0077ED] to-[#0071E3] text-white text-3xl shadow-[0_8px_20px_rgba(0,113,227,0.3)] mb-1">
+          <i class="fa-solid fa-language"></i>
         </div>
-        <h1 class="text-2xl font-bold text-slate-800">HSK Flashcards</h1>
-        <p id="i18nAuthSubtitle" class="text-xs text-slate-500">Đăng nhập để tải tiến trình học cá nhân của bạn • 登录以加载您的个人学习进度</p>
+        <h1 class="text-2xl font-bold tracking-tight text-[#1D1D1F]">HSK Flashcards</h1>
+        <p id="i18nAuthSubtitle" class="text-xs text-[#86868B]">Đăng nhập để tải tiến trình học cá nhân của bạn • 登录以加载您的个人学习进度</p>
       </div>
 
       <!-- Thông báo lần đầu chưa có tài khoản nào trên DB -->
-      <div id="authFirstSetupBanner" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 space-y-1">
-        <div class="font-bold flex items-center gap-1.5 text-amber-900">
-          <i class="fa-solid fa-shield-halved text-amber-600"></i>
+      <div id="authFirstSetupBanner" class="hidden bg-[#FFF9EB] border border-[#FF9500]/30 rounded-2xl p-3.5 text-xs text-amber-900 space-y-1">
+        <div class="font-bold flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-halved text-[#FF9500]"></i>
           <span id="i18nFirstSetupTitle">Khởi tạo Tài khoản Chủ sở hữu (Owner) • 初始化所有者账户</span>
         </div>
-        <p id="i18nFirstSetupDesc">Database hiện chưa có tài khoản nào. Hãy tạo tài khoản đầu tiên của bạn — toàn bộ thẻ và tiến trình học hiện có sẽ thuộc về tài khoản này.</p>
+        <p id="i18nFirstSetupDesc" class="text-amber-800/90">Database hiện chưa có tài khoản nào. Hãy tạo tài khoản đầu tiên của bạn — toàn bộ thẻ và tiến trình học hiện có sẽ thuộc về tài khoản này.</p>
       </div>
 
-      <!-- Chuyển tab Đăng nhập / Đăng ký -->
-      <div id="authTabSwitcher" class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl text-xs font-semibold">
-        <button type="button" id="tabBtnLogin" class="py-2 rounded-lg bg-white text-indigo-600 shadow-sm transition">
-          <i class="fa-solid fa-right-to-bracket mr-1"></i> <span id="i18nTabLogin">Đăng nhập • 登录</span>
+      <!-- Chuyển tab Đăng nhập / Đăng ký (Apple Segmented Control) -->
+      <div id="authTabSwitcher" class="grid grid-cols-2 gap-1 apple-segmented text-xs font-semibold">
+        <button type="button" id="tabBtnLogin" class="py-2 rounded-full bg-white text-[#1D1D1F] shadow-sm transition">
+          <i class="fa-solid fa-right-to-bracket mr-1 text-[#0071E3]"></i> <span id="i18nTabLogin">Đăng nhập • 登录</span>
         </button>
-        <button type="button" id="tabBtnRegister" class="py-2 rounded-lg text-slate-600 hover:bg-white/60 transition">
+        <button type="button" id="tabBtnRegister" class="py-2 rounded-full text-[#86868B] hover:text-[#1D1D1F] transition">
           <i class="fa-solid fa-user-plus mr-1"></i> <span id="i18nTabRegister">Tạo tài khoản • 注册</span>
         </button>
       </div>
@@ -74,111 +155,123 @@
       <!-- Form Đăng nhập / Đăng ký -->
       <form id="authForm" class="space-y-3.5" onsubmit="return false;">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">
-            <i class="fa-solid fa-user text-indigo-500 mr-1"></i><span id="i18nLabelUsername">Tên đăng nhập (User) • 用户名:</span>
+          <label class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+            <i class="fa-solid fa-user text-[#0071E3] mr-1"></i><span id="i18nLabelUsername">Tên đăng nhập (User) • 用户名:</span>
           </label>
           <input type="text" id="authUsername" autocomplete="username" required placeholder="Nhập tên user / 请输入用户名"
-            class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            class="w-full apple-input rounded-2xl px-4 py-3 text-sm">
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">
-            <i class="fa-solid fa-lock text-indigo-500 mr-1"></i><span id="i18nLabelPassword">Mật khẩu • 密码:</span>
+          <label class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+            <i class="fa-solid fa-lock text-[#0071E3] mr-1"></i><span id="i18nLabelPassword">Mật khẩu • 密码:</span>
           </label>
           <div class="relative">
             <input type="password" id="authPassword" autocomplete="current-password" required placeholder="Nhập mật khẩu / 请输入密码..."
-              class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 pr-10 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              class="w-full apple-input rounded-2xl px-4 py-3 pr-10 text-sm">
             <button type="button" id="btnToggleShowAuthPwd" tabindex="-1"
-              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">
+              class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] text-xs">
               <i class="fa-solid fa-eye"></i>
             </button>
           </div>
         </div>
 
         <div id="authConfirmPwdBox" class="hidden">
-          <label class="block text-xs font-semibold text-slate-700 mb-1">
-            <i class="fa-solid fa-check-double text-indigo-500 mr-1"></i><span id="i18nLabelConfirmPwd">Nhập lại mật khẩu • 确认密码:</span>
+          <label class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+            <i class="fa-solid fa-check-double text-[#0071E3] mr-1"></i><span id="i18nLabelConfirmPwd">Nhập lại mật khẩu • 确认密码:</span>
           </label>
           <input type="password" id="authConfirmPassword" autocomplete="new-password" placeholder="Nhập lại mật khẩu / 请再次输入密码..."
-            class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            class="w-full apple-input rounded-2xl px-4 py-3 text-sm">
         </div>
 
-        <div class="flex items-center justify-between text-xs text-slate-600 pt-0.5">
+        <div class="flex items-center justify-between text-xs text-[#86868B] pt-0.5">
           <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" id="authRememberMe" checked class="rounded text-indigo-600 focus:ring-indigo-500">
+            <input type="checkbox" id="authRememberMe" checked class="rounded text-[#0071E3] focus:ring-[#0071E3]">
             <span id="i18nRememberMe">Ghi nhớ đăng nhập trên thiết bị này • 记住登录状态</span>
           </label>
         </div>
 
-        <div id="authErrorMsg" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium"></div>
+        <div id="authErrorMsg" class="hidden p-3.5 rounded-2xl bg-[#FFF2F2] border border-[#FF3B30]/20 text-xs text-[#FF3B30] font-medium"></div>
 
         <button type="submit" id="btnSubmitAuth"
-          class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2">
+          class="w-full py-3.5 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-sm shadow-[0_6px_16px_rgba(0,113,227,0.28)] apple-btn flex items-center justify-center gap-2">
           <i class="fa-solid fa-right-to-bracket"></i> <span id="i18nBtnSubmitAuth">Đăng nhập vào học • 登录学习</span>
         </button>
       </form>
 
-      <div class="pt-3 border-t border-slate-100 flex items-center justify-center text-[11px] text-slate-400">
-        <span><i class="fa-solid fa-shield-cat mr-1 text-emerald-500"></i><span id="i18nAuthSecurityNote">Bảo mật xác thực SHA-256 • SHA-256 加密安全认证</span></span>
+      <div class="pt-3 border-t border-black/[0.06] flex items-center justify-center text-[11px] text-[#86868B]">
+        <span><i class="fa-solid fa-lock mr-1 text-[#34C759]"></i><span id="i18nAuthSecurityNote">Bảo mật xác thực SHA-256 • SHA-256 加密安全认证</span></span>
       </div>
     </div>
   </div>
 
-  <!-- Header -->
-  <header id="appHeader" class="hidden bg-indigo-600 text-white shadow-md">
-    <div class="max-w-4xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-3">
+  <!-- Header (Phong cách macOS / iPadOS Frosted Glass Navigation Bar) -->
+  <header id="appHeader" class="hidden sticky top-0 z-40 apple-glass-header">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
       <div>
         <div class="flex items-center gap-2 flex-wrap">
-          <h1 class="text-2xl font-bold flex items-center gap-2">
-            <span>🇨🇳</span> HSK Flashcards
-          </h1>
+          <div class="flex items-center gap-2 mr-1">
+            <span class="w-8 h-8 rounded-[10px] bg-gradient-to-b from-[#0077ED] to-[#0071E3] text-white flex items-center justify-center text-sm shadow-sm">
+              <i class="fa-solid fa-language"></i>
+            </span>
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-[#1D1D1F]">HSK Flashcards</h1>
+          </div>
+
           <button id="btnOpenSettings"
-            class="text-xs px-2.5 py-1 rounded-full bg-indigo-700/80 hover:bg-indigo-800 border border-indigo-400/30 flex items-center gap-1.5 transition"
+            class="text-xs px-2.5 py-1 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] border border-black/[0.06] flex items-center gap-1.5 apple-btn"
             title="Cấu hình AI & Đồng bộ (Chỉ Chủ sở hữu / 仅所有者)">
             <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
-            <span id="syncStatusText">Cục bộ</span>
-            <i id="settingsGearIcon" class="fa-solid fa-gear ml-0.5 text-indigo-200"></i>
+            <span id="syncStatusText" class="font-medium">Cục bộ</span>
+            <i id="settingsGearIcon" class="fa-solid fa-sliders ml-0.5 text-[#86868B]"></i>
           </button>
+
           <!-- Nút Tài khoản đang đăng nhập -->
           <button id="btnOpenUserModal"
-            class="text-xs px-2.5 py-1 rounded-full bg-emerald-600/90 hover:bg-emerald-700 border border-emerald-400/40 flex items-center gap-1.5 transition"
+            class="text-xs px-2.5 py-1 rounded-full bg-[#34C759]/10 hover:bg-[#34C759]/20 text-[#1D8338] border border-[#34C759]/25 flex items-center gap-1.5 apple-btn"
             title="Tài khoản & Tiến trình học cá nhân / 个人账户与进度">
-            <i class="fa-solid fa-user-check text-emerald-200"></i>
+            <i class="fa-solid fa-circle-user text-[#34C759]"></i>
             <span id="currentUserBadgeText" class="font-semibold">User</span>
           </button>
+
           <button id="btnQuickLogout"
-            class="text-xs px-2 py-1 rounded-full bg-indigo-700/70 hover:bg-rose-600 border border-indigo-400/30 text-indigo-100 hover:text-white transition"
+            class="text-xs px-2.5 py-1 rounded-full bg-black/[0.04] hover:bg-[#FF3B30] hover:text-white text-[#86868B] border border-black/[0.05] apple-btn"
             title="Đăng xuất / 退出登录">
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
+
           <!-- Bộ chuyển đổi ngôn ngữ giao diện Việt / Trung / Song ngữ -->
-          <div class="inline-flex items-center bg-indigo-800/70 p-0.5 rounded-full border border-indigo-400/30 text-[11px] font-semibold">
-            <button type="button" data-lang-switch="vi" class="lang-switch-btn px-2 py-0.5 rounded-full transition">🇻🇳 Việt</button>
-            <button type="button" data-lang-switch="zh" class="lang-switch-btn px-2 py-0.5 rounded-full transition">🇨🇳 中文</button>
-            <button type="button" data-lang-switch="bi" class="lang-switch-btn px-2 py-0.5 rounded-full transition">Song ngữ/双语</button>
+          <div class="inline-flex items-center apple-segmented text-[11px] font-semibold">
+            <button type="button" data-lang-switch="vi" class="lang-switch-btn px-2.5 py-0.5 rounded-full transition">🇻🇳 Việt</button>
+            <button type="button" data-lang-switch="zh" class="lang-switch-btn px-2.5 py-0.5 rounded-full transition">🇨🇳 中文</button>
+            <button type="button" data-lang-switch="bi" class="lang-switch-btn px-2.5 py-0.5 rounded-full transition">Song ngữ/双语</button>
           </div>
         </div>
-        <p id="i18nHeaderSubtitle" class="text-xs text-indigo-100 mt-1">Đồng bộ tiến trình học theo từng User & Tự động tạo Pinyin/Ngữ pháp bằng AI • 按用户同步学习进度 & AI智能解析</p>
+        <p id="i18nHeaderSubtitle" class="text-[11px] text-[#86868B] mt-0.5">Đồng bộ tiến trình học theo từng User & Tự động tạo Pinyin/Ngữ pháp bằng AI • 按用户同步学习进度 & AI智能解析</p>
       </div>
+
+      <!-- Segmented Navigation + Quick Action Pills -->
       <div class="flex items-center gap-2 flex-wrap">
-        <button id="btnStudyMode"
-          class="px-3 py-1.5 rounded-lg bg-white text-indigo-600 font-semibold text-sm shadow hover:bg-indigo-50 transition">
-          <i class="fa-solid fa-layer-group mr-1"></i> <span id="i18nNavStudy">Lật thẻ • 翻卡</span>
-        </button>
-        <button id="btnQuizMode"
-          class="px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold text-sm hover:bg-indigo-400 transition">
-          <i class="fa-solid fa-feather mr-1"></i> <span id="i18nNavQuiz">Kiểm tra • 测验</span>
-        </button>
-        <button id="btnListMode"
-          class="px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold text-sm hover:bg-indigo-400 transition">
-          <i class="fa-solid fa-list mr-1"></i> <span id="i18nNavList">Danh sách • 列表</span>
-        </button>
+        <div class="inline-flex items-center apple-segmented">
+          <button id="btnStudyMode"
+            class="px-3.5 py-1.5 rounded-full bg-white text-[#1D1D1F] font-semibold text-xs sm:text-sm shadow-sm apple-btn">
+            <i class="fa-solid fa-clone mr-1 text-[#0071E3]"></i> <span id="i18nNavStudy">Lật thẻ • 翻卡</span>
+          </button>
+          <button id="btnQuizMode"
+            class="px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn">
+            <i class="fa-solid fa-bolt mr-1"></i> <span id="i18nNavQuiz">Kiểm tra • 测验</span>
+          </button>
+          <button id="btnListMode"
+            class="px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn">
+            <i class="fa-solid fa-folder-open mr-1"></i> <span id="i18nNavList">Bộ thẻ • 牌组</span>
+          </button>
+        </div>
+
         <button id="btnOpenBulkModal"
-          class="px-3 py-1.5 rounded-lg bg-amber-500 text-white font-semibold text-sm hover:bg-amber-400 shadow transition">
-          <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> <span id="i18nNavBulk">Import AI • 批量导入</span>
+          class="px-3.5 py-1.5 rounded-full bg-[#FF9500]/12 hover:bg-[#FF9500]/20 text-[#C93400] border border-[#FF9500]/25 font-semibold text-xs sm:text-sm apple-btn">
+          <i class="fa-solid fa-wand-magic-sparkles mr-1 text-[#FF9500]"></i> <span id="i18nNavBulk">Import AI • 批量导入</span>
         </button>
         <button id="btnOpenAddModal"
-          class="px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-semibold text-sm hover:bg-emerald-400 shadow transition">
+          class="px-3.5 py-1.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-xs sm:text-sm shadow-[0_2px_8px_rgba(0,113,227,0.25)] apple-btn">
           <i class="fa-solid fa-plus mr-1"></i> <span id="i18nNavAdd">Thêm câu • 添加</span>
         </button>
       </div>
@@ -186,64 +279,68 @@
   </header>
 
   <!-- Main Content -->
-  <main id="appMain" class="hidden max-w-4xl mx-auto px-4 py-6 flex-1 w-full">
+  <main id="appMain" class="hidden max-w-5xl mx-auto px-4 py-6 flex-1 w-full">
 
     <!-- Flashcard Mode View -->
     <div id="viewFlashcards" class="space-y-5">
-      <!-- Thanh nhắc nhở Lặp lại ngắt quãng (SRS Banner) -->
+      <!-- Thanh nhắc nhở Lặp lại ngắt quãng (Apple Notification Banner) -->
       <div id="srsBanner"
-        class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-xl p-3.5 flex flex-wrap justify-between items-center gap-3 shadow-sm">
-        <div class="flex items-center gap-2.5">
+        class="apple-surface rounded-[22px] p-4 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center gap-3">
           <div
-            class="w-9 h-9 rounded-lg bg-amber-500/15 text-amber-600 flex items-center justify-center text-base shrink-0">
+            class="w-10 h-10 rounded-2xl bg-[#FF9500]/12 text-[#FF9500] flex items-center justify-center text-lg shrink-0">
             <i class="fa-solid fa-clock-rotate-left"></i>
           </div>
           <div>
-            <div class="text-xs sm:text-sm font-bold text-slate-800">
+            <div class="text-xs sm:text-sm font-bold text-[#1D1D1F]">
               <span id="i18nSrsBannerTitle">Lặp lại ngắt quãng (SRS) • 间隔重复:</span>
-              <span id="srsDueCountText" class="text-rose-600">0 câu</span>
+              <span id="srsDueCountText" class="text-[#FF3B30] ml-0.5">0 câu</span>
               <span id="i18nSrsBannerSuffix">cần ôn tập hôm nay • 今日待复习</span>
             </div>
-            <p id="i18nSrsBannerDesc" class="text-[11px] text-slate-500">Bao gồm câu chưa thuộc, câu trả lời sai khi kiểm tra hoặc câu đã đến hạn ôn lại để tránh quên.</p>
+            <p id="i18nSrsBannerDesc" class="text-[11px] text-[#86868B]">Bao gồm câu chưa thuộc, câu trả lời sai khi kiểm tra hoặc câu đã đến hạn ôn lại để tránh quên.</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
           <button id="btnStudySrsNow"
-            class="text-xs px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold shadow-sm transition">
+            class="text-xs px-3.5 py-2 rounded-full bg-[#FF9500] hover:bg-[#F08800] text-white font-semibold shadow-sm apple-btn">
             <i class="fa-solid fa-bolt mr-1"></i> <span id="i18nBtnStudySrsNow">Học lại ngay • 立即复习</span>
           </button>
           <button id="btnQuizSrsNow"
-            class="text-xs px-3 py-1.5 rounded-lg bg-white hover:bg-amber-100 text-amber-700 border border-amber-300 font-semibold transition">
-            <i class="fa-solid fa-clipboard-check mr-1"></i> <span id="i18nBtnQuizSrsNow">Kiểm tra câu cần ôn • 测验待复习</span>
+            class="text-xs px-3.5 py-2 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] font-semibold apple-btn">
+            <i class="fa-solid fa-clipboard-check mr-1 text-[#0071E3]"></i> <span id="i18nBtnQuizSrsNow">Kiểm tra câu cần ôn • 测验待复习</span>
           </button>
         </div>
       </div>
 
-      <!-- Thanh công cụ Lọc Thư mục & Trạng thái -->
+      <!-- Thanh công cụ Lọc Bộ thẻ, Chỉnh sửa Bộ thẻ & Trạng thái -->
       <div
-        class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+        class="apple-surface p-4 rounded-[22px] flex flex-wrap justify-between items-center gap-3">
         <div class="flex items-center gap-2.5 flex-wrap">
-          <span id="i18nProgressLabel" class="text-sm font-semibold text-slate-600">Tiến độ • 进度:</span>
-          <span id="cardProgressText" class="text-sm font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded">1 / 40</span>
-          <span id="statsSummaryText" class="text-xs text-slate-500"></span>
+          <span id="i18nProgressLabel" class="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Tiến độ • 进度</span>
+          <span id="cardProgressText" class="text-sm font-bold text-[#0071E3] bg-[#0071E3]/10 px-3 py-0.5 rounded-full">1 / 40</span>
+          <span id="statsSummaryText" class="text-xs text-[#86868B]"></span>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-          <!-- Chọn thư mục -->
-          <div class="flex items-center gap-1">
-            <i class="fa-solid fa-folder-open text-amber-500 text-xs"></i>
+          <!-- Chọn & Chỉnh sửa Bộ thẻ / Thư mục -->
+          <div class="flex items-center gap-1.5 bg-[#F5F5F7] px-2.5 py-1 rounded-full border border-black/[0.06]">
+            <i class="fa-solid fa-folder text-[#FF9500] text-xs"></i>
             <select id="studyFolderSelect"
-              class="text-xs border rounded-lg px-2 py-1.5 bg-white border-slate-300 font-medium text-slate-700">
-              <option value="all">Tất cả thư mục</option>
+              class="text-xs bg-transparent font-semibold text-[#1D1D1F] outline-none cursor-pointer pr-1">
+              <option value="all">Tất cả bộ thẻ</option>
             </select>
-            <button id="btnNewFolderQuick" title="Tạo thư mục bộ thẻ mới / 新建文件夹"
-              class="text-xs px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold transition">
-              <span id="i18nBtnNewFolderQuick">+ Thư mục • 文件夹</span>
+            <button id="btnNewFolderQuick" title="Tạo bộ thẻ / thư mục mới • 新建牌组"
+              class="text-[11px] px-2 py-0.5 rounded-full bg-white hover:bg-black/[0.04] text-[#0071E3] font-semibold shadow-sm apple-btn">
+              <span id="i18nBtnNewFolderQuick">+ Bộ thẻ</span>
+            </button>
+            <button id="btnEditFolderQuick" title="Đổi tên / Quản lý các bộ thẻ • 编辑与管理牌组"
+              class="text-[11px] px-2 py-0.5 rounded-full bg-white hover:bg-black/[0.04] text-[#1D1D1F] font-semibold shadow-sm apple-btn">
+              <i class="fa-solid fa-pen text-[10px] text-[#0071E3] mr-0.5"></i><span id="i18nBtnEditFolderQuick">Sửa bộ thẻ</span>
             </button>
           </div>
 
           <!-- Chọn bộ lọc trạng thái / SRS -->
           <select id="filterSelect"
-            class="text-xs border rounded-lg px-2 py-1.5 bg-white border-slate-300 font-medium text-slate-700">
+            class="text-xs rounded-full px-3 py-1.5 bg-[#F5F5F7] border border-black/[0.06] font-semibold text-[#1D1D1F] outline-none cursor-pointer">
             <option value="all" id="i18nFilterAll">Tất cả trạng thái • 全部状态</option>
             <option value="srs_due" id="i18nFilterSrsDue">🔥 Cần ôn hôm nay (SRS) • 今日待复习</option>
             <option value="new" id="i18nFilterNew">🌱 Mới chưa học • 未学新卡</option>
@@ -254,86 +351,93 @@
 
           <!-- Đổi chiều mặt thẻ (Trung -> Việt hoặc Việt -> Trung) -->
           <button id="btnToggleDirection" title="Đổi chiều mặt trước / mặt sau của thẻ • 切换卡片正反面方向"
-            class="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold transition flex items-center gap-1">
+            class="text-xs px-3 py-1.5 rounded-full bg-[#34C759]/12 text-[#1D8338] border border-[#34C759]/25 font-semibold apple-btn flex items-center gap-1">
             <i class="fa-solid fa-right-left"></i> <span id="directionLabel">🇨🇳 ➔ 🇻🇳</span>
           </button>
 
           <!-- Làm mờ / Hiện rõ Pinyin -->
           <button id="btnToggleBlurPinyin" title="Làm mờ hoặc hiện rõ phiên âm Pinyin • 模糊/清晰显示拼音"
-            class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200 font-semibold transition flex items-center gap-1">
+            class="text-xs px-3 py-1.5 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-semibold apple-btn flex items-center gap-1">
             <i id="blurPinyinIcon" class="fa-solid fa-eye"></i> <span id="blurPinyinLabel">Pinyin: Rõ</span>
           </button>
 
           <!-- Bật/tắt tự động phát âm mặt tiếng Trung -->
           <button id="btnToggleAutoSpeak" title="Tự động phát âm khi ở mặt Tiếng Trung • 中文面自动发音"
-            class="text-xs px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 font-semibold transition flex items-center gap-1">
+            class="text-xs px-3 py-1.5 rounded-full bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 font-semibold apple-btn flex items-center gap-1">
             <i class="fa-solid fa-volume-high"></i> <span id="autoSpeakLabel">Tự đọc: BẬT</span>
           </button>
 
+          <!-- Chỉnh sửa thẻ đang hiển thị -->
+          <button id="btnEditCurrentCard" title="Chỉnh sửa nội dung thẻ này (Chữ Hán, Pinyin, Nghĩa, Ngữ pháp, Bộ thẻ) • 编辑当前卡片"
+            class="text-xs px-3 py-1.5 rounded-full bg-[#0071E3]/10 hover:bg-[#0071E3]/20 text-[#0071E3] border border-[#0071E3]/20 font-semibold apple-btn flex items-center gap-1">
+            <i class="fa-solid fa-pen-to-square"></i> <span id="i18nBtnEditCurrentCard">Sửa thẻ • 编辑</span>
+          </button>
+
           <button id="btnReloadCloud" title="Tải lại từ Cloud / 从云端重新加载"
-            class="text-slate-500 hover:text-indigo-600 p-1.5 text-sm">
+            class="w-8 h-8 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] flex items-center justify-center text-xs apple-btn">
             <i class="fa-solid fa-rotate"></i>
           </button>
-          <button id="btnSpeak" title="Đọc lại câu này / 朗读此句" class="text-slate-600 hover:text-indigo-600 p-1.5 text-lg">
-            <i class="fa-solid fa-circle-play"></i>
+          <button id="btnSpeak" title="Đọc lại câu này / 朗读此句"
+            class="w-8 h-8 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white flex items-center justify-center text-xs shadow-sm apple-btn">
+            <i class="fa-solid fa-volume-high"></i>
           </button>
         </div>
       </div>
 
-      <!-- Flashcard Interactive Area -->
-      <div class="flex justify-center items-center">
-        <div id="cardContainer" class="w-full max-w-xl h-80 perspective-1000 cursor-pointer select-none">
-          <div id="cardInner" class="relative w-full h-full transition-transform duration-500 transform-style-3d">
+      <!-- Flashcard Interactive Area (Apple Card Aesthetic) -->
+      <div class="flex justify-center items-center py-1">
+        <div id="cardContainer" class="w-full max-w-2xl h-80 sm:h-[340px] perspective-1000 cursor-pointer select-none">
+          <div id="cardInner" class="relative w-full h-full transform-style-3d">
 
             <!-- Mặt Trước -->
             <div
-              class="absolute w-full h-full bg-white rounded-2xl shadow-lg border border-slate-200 p-6 flex flex-col justify-between backface-hidden">
+              class="absolute w-full h-full apple-card-front rounded-[30px] p-7 sm:p-8 flex flex-col justify-between backface-hidden">
               <div class="flex justify-between items-center gap-2 flex-wrap">
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-2">
                   <span id="cardFrontSideBadge"
-                    class="text-xs font-semibold uppercase tracking-wider text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">
+                    class="text-[11px] font-semibold uppercase tracking-wider text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full">
                     Mặt Trước (Tiếng Trung)
                   </span>
                   <span id="cardFolderBadge"
-                    class="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200/70 px-2 py-0.5 rounded-full">
-                    <i class="fa-solid fa-folder text-amber-400 mr-1"></i>Mặc định
+                    class="text-xs font-semibold text-[#1D1D1F] bg-black/[0.04] border border-black/[0.06] px-2.5 py-1 rounded-full">
+                    <i class="fa-solid fa-folder text-[#FF9500] mr-1"></i>Mặc định
                   </span>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <span id="srsNextReviewBadge"
-                    class="text-[11px] px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-500"></span>
-                  <span id="levelBadge" class="text-xs px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-600">Mới học</span>
+                    class="text-[11px] px-2.5 py-1 rounded-full font-medium bg-black/[0.04] text-[#86868B]"></span>
+                  <span id="levelBadge" class="text-xs px-2.5 py-1 rounded-full font-semibold bg-black/[0.05] text-[#1D1D1F]">Mới học</span>
                 </div>
               </div>
-              <div class="text-center my-auto space-y-3">
-                <h2 id="cardHanzi" class="text-2xl sm:text-3xl font-bold text-slate-800 leading-snug tracking-wide">
+              <div class="text-center my-auto space-y-3.5 px-2">
+                <h2 id="cardHanzi" class="text-2xl sm:text-4xl font-bold text-[#1D1D1F] leading-snug tracking-tight">
                 </h2>
-                <p id="cardPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="text-base sm:text-lg text-indigo-600 font-mono tracking-wide transition duration-200"></p>
+                <p id="cardPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="text-base sm:text-lg text-[#0071E3] font-medium tracking-wide transition duration-200"></p>
               </div>
               <div class="text-center">
-                <span id="cardFrontHintText" class="text-xs text-slate-400 italic">
-                  <i class="fa-solid fa-hand-pointer mr-1"></i> Bấm để lật xem nghĩa & cấu trúc ngữ pháp
+                <span id="cardFrontHintText" class="text-xs text-[#86868B]">
+                  <i class="fa-solid fa-hand-pointer mr-1 text-[#0071E3]"></i> Bấm để lật xem nghĩa & cấu trúc ngữ pháp
                 </span>
               </div>
             </div>
 
-            <!-- Mặt Sau -->
+            <!-- Mặt Sau (Apple Midnight Titanium) -->
             <div
-              class="absolute w-full h-full bg-indigo-900 text-white rounded-2xl shadow-lg p-6 flex flex-col justify-between backface-hidden rotate-y-180">
+              class="absolute w-full h-full apple-card-back text-white rounded-[30px] p-7 sm:p-8 flex flex-col justify-between backface-hidden rotate-y-180">
               <div class="flex justify-between items-center">
                 <span id="cardBackSideBadge"
-                  class="text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-800/60 px-2.5 py-1 rounded-full">
+                  class="text-[11px] font-semibold uppercase tracking-wider text-white/80 bg-white/10 px-3 py-1 rounded-full">
                 </span>
-                <span id="i18nFlipBackHint" class="text-xs text-indigo-300">Bấm để lật lại • 点击翻回</span>
+                <span id="i18nFlipBackHint" class="text-xs text-white/60">Bấm để lật lại • 点击翻回</span>
               </div>
-              <div class="text-center my-auto space-y-2.5 overflow-y-auto max-h-48 px-1">
-                <p id="cardMeaning" class="text-xl sm:text-2xl font-bold text-emerald-300"></p>
-                <p id="cardBackPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="hidden text-sm sm:text-base text-amber-200 font-mono tracking-wide transition duration-200"></p>
+              <div class="text-center my-auto space-y-3 overflow-y-auto max-h-48 px-2">
+                <p id="cardMeaning" class="text-xl sm:text-2xl font-bold text-[#30D158]"></p>
+                <p id="cardBackPinyin" title="Di chuột vào để xem rõ Pinyin / 悬停查看清晰拼音" class="hidden text-sm sm:text-base text-[#FFD60A] font-medium tracking-wide transition duration-200"></p>
                 <div id="cardGrammar"
-                  class="text-xs sm:text-sm text-indigo-100 bg-indigo-800/40 p-3 rounded-lg border border-indigo-700/50 text-left">
+                  class="text-xs sm:text-sm text-white/90 bg-white/[0.08] backdrop-blur-md p-3.5 rounded-2xl border border-white/10 text-left leading-relaxed">
                 </div>
               </div>
-              <div id="i18nCardBackFooter" class="text-center text-xs text-indigo-300">
+              <div id="i18nCardBackFooter" class="text-center text-xs text-white/60">
                 Đánh giá bên dưới để lên lịch Lặp lại ngắt quãng (SRS) • 请在下方评估记忆程度 👇
               </div>
             </div>
@@ -342,71 +446,71 @@
         </div>
       </div>
 
-      <!-- Spaced Repetition Buttons -->
-      <div class="flex flex-wrap justify-center items-center gap-3 max-w-xl mx-auto">
+      <!-- Spaced Repetition Buttons (Apple Pill Buttons) -->
+      <div class="flex flex-wrap justify-center items-center gap-3 max-w-2xl mx-auto">
         <button id="btnPrev"
-          class="px-4 py-2.5 rounded-lg bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
-          <i class="fa-solid fa-arrow-left"></i>
+          class="w-11 h-11 rounded-2xl apple-surface text-[#1D1D1F] font-medium hover:bg-white flex items-center justify-center apple-btn">
+          <i class="fa-solid fa-chevron-left"></i>
         </button>
         <button id="btnHard"
-          class="flex-1 py-2 px-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-semibold hover:bg-rose-100 transition text-sm">
+          class="flex-1 py-2.5 px-3 rounded-2xl bg-white text-[#FF3B30] border border-[#FF3B30]/20 shadow-sm font-semibold hover:bg-[#FFF2F2] apple-btn text-sm">
           <div><i class="fa-solid fa-rotate-left mr-1"></i> <span id="i18nBtnHardLabel">Chưa nhớ • 没记住</span></div>
-          <div id="i18nBtnHardSubtext" class="text-[10px] font-normal text-rose-500">Ôn lại ngay hôm nay • 今日重温</div>
+          <div id="i18nBtnHardSubtext" class="text-[10px] font-normal text-[#FF3B30]/80">Ôn lại ngay hôm nay • 今日重温</div>
         </button>
         <button id="btnGood"
-          class="flex-1 py-2 px-3 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-semibold hover:bg-amber-100 transition text-sm">
+          class="flex-1 py-2.5 px-3 rounded-2xl bg-white text-[#FF9500] border border-[#FF9500]/25 shadow-sm font-semibold hover:bg-[#FFF9EB] apple-btn text-sm">
           <div><i class="fa-solid fa-clock mr-1"></i> <span id="i18nBtnGoodLabel">Bình thường • 一般</span></div>
-          <div id="btnGoodSubtext" class="text-[10px] font-normal text-amber-600">Ôn sau 1-3 ngày</div>
+          <div id="btnGoodSubtext" class="text-[10px] font-normal text-[#FF9500]/90">Ôn sau 1-3 ngày</div>
         </button>
         <button id="btnEasy"
-          class="flex-1 py-2 px-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold hover:bg-emerald-100 transition text-sm">
+          class="flex-1 py-2.5 px-3 rounded-2xl bg-white text-[#248A3D] border border-[#34C759]/25 shadow-sm font-semibold hover:bg-[#F2FBF4] apple-btn text-sm">
           <div><i class="fa-solid fa-check mr-1"></i> <span id="i18nBtnEasyLabel">Đã nhớ (Dễ) • 已记住</span></div>
-          <div id="btnEasySubtext" class="text-[10px] font-normal text-emerald-600">Ôn sau 3-7+ ngày</div>
+          <div id="btnEasySubtext" class="text-[10px] font-normal text-[#248A3D]/80">Ôn sau 3-7+ ngày</div>
         </button>
         <button id="btnNext"
-          class="px-4 py-2.5 rounded-lg bg-slate-200 text-slate-700 font-medium hover:bg-slate-300 transition">
-          <i class="fa-solid fa-arrow-right"></i>
+          class="w-11 h-11 rounded-2xl apple-surface text-[#1D1D1F] font-medium hover:bg-white flex items-center justify-center apple-btn">
+          <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
     </div>
 
     <!-- Quiz Mode View (Luyện tập đa chế độ + Chọn thư mục + SRS) -->
     <div id="viewQuiz" class="hidden space-y-6 max-w-2xl mx-auto">
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-        <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3 border-slate-100">
-          <h3 class="font-bold text-lg text-slate-800">
-            <i class="fa-solid fa-clipboard-question text-indigo-600 mr-2"></i> <span id="i18nQuizHeaderTitle">Luyện tập & Kiểm tra • 练习与测验</span>
+      <div class="apple-surface p-6 sm:p-7 rounded-[28px] space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3 border-b pb-3.5 border-black/[0.06]">
+          <h3 class="font-bold text-lg text-[#1D1D1F]">
+            <i class="fa-solid fa-clipboard-question text-[#0071E3] mr-2"></i> <span id="i18nQuizHeaderTitle">Luyện tập & Kiểm tra • 练习与测验</span>
           </h3>
           <div class="flex items-center gap-2 flex-wrap">
             <!-- Lọc nguồn câu hỏi kiểm tra (Tất cả vs Cần ôn SRS) -->
             <select id="quizSourceFilter"
-              class="text-xs border border-slate-300 rounded-lg px-2.5 py-1 bg-white text-slate-700 font-medium">
+              class="text-xs border border-black/[0.08] rounded-full px-3 py-1.5 bg-[#F5F5F7] text-[#1D1D1F] font-semibold outline-none">
               <option value="all" id="i18nQuizSrcAll">Tất cả câu trong thư mục • 文件夹内全部</option>
               <option value="srs_priority" id="i18nQuizSrcPriority">🔥 Ưu tiên câu Cần ôn / Hay sai • 优先待复习/易错</option>
               <option value="srs_only" id="i18nQuizSrcOnly">⚠️ Chỉ câu Cần ôn hôm nay (SRS) • 仅今日待复习</option>
             </select>
             <select id="quizCountSelect"
-              class="text-xs border border-slate-300 rounded-lg px-2 py-1 bg-white text-slate-700 font-medium">
+              class="text-xs border border-black/[0.08] rounded-full px-2.5 py-1.5 bg-[#F5F5F7] text-[#1D1D1F] font-semibold outline-none">
               <option value="5">5 câu / 题</option>
               <option value="10">10 câu / 题</option>
               <option value="20">20 câu / 题</option>
               <option value="50">50 câu / 题</option>
             </select>
             <span id="quizScoreBadge"
-              class="text-xs font-semibold px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-full">
+              class="text-xs font-semibold px-3 py-1 bg-[#0071E3]/10 text-[#0071E3] rounded-full">
               Câu 1 / 5
             </span>
           </div>
         </div>
 
         <!-- Chọn thư mục bộ thẻ để kiểm tra (Chọn 1, nhiều hoặc tất cả) -->
-        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-2">
+        <div class="bg-[#F5F5F7] p-3.5 rounded-2xl border border-black/[0.05] space-y-2">
           <div class="flex justify-between items-center">
-            <span class="text-xs font-bold text-slate-600">
-              <i class="fa-solid fa-folder-tree text-amber-500 mr-1"></i> <span id="i18nQuizSelectFolderLabel">Chọn thư mục bộ thẻ muốn kiểm tra • 选择测验文件夹:</span>
+            <span class="text-xs font-bold text-[#1D1D1F]">
+              <i class="fa-solid fa-folder-tree text-[#FF9500] mr-1"></i> <span id="i18nQuizSelectFolderLabel">Chọn bộ thẻ muốn kiểm tra • 选择测验牌组:</span>
             </span>
             <button type="button" id="btnQuizSelectAllFolders"
-              class="text-[11px] text-indigo-600 hover:underline font-semibold">
+              class="text-[11px] text-[#0071E3] hover:underline font-semibold">
               Chọn tất cả • 全选
             </button>
           </div>
@@ -414,58 +518,58 @@
         </div>
 
         <!-- Bộ chọn chế độ kiểm tra -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 bg-slate-100 p-1.5 rounded-xl text-xs font-semibold">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 bg-[#E8E8ED]/70 p-1.5 rounded-2xl text-xs font-semibold">
           <button type="button" data-quiz-mode="zh_to_vi"
-            class="quiz-mode-btn py-2 px-2 rounded-lg bg-white text-indigo-600 shadow-sm transition text-center">
+            class="quiz-mode-btn py-2 px-2 rounded-xl bg-white text-[#0071E3] shadow-sm transition text-center">
             🇨🇳 ➔ 🇻🇳<br><span id="i18nQModeZhVi" class="text-[11px] font-medium">Trung ➔ Việt • 中译越</span>
           </button>
           <button type="button" data-quiz-mode="vi_to_zh"
-            class="quiz-mode-btn py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center">
+            class="quiz-mode-btn py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center">
             🇻🇳 ➔ 🇨🇳<br><span id="i18nQModeViZh" class="text-[11px] font-medium">Việt ➔ Trung • 越译中</span>
           </button>
           <button type="button" data-quiz-mode="listen_choice"
-            class="quiz-mode-btn py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center">
+            class="quiz-mode-btn py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center">
             🎧 Chọn<br><span id="i18nQModeListenChoice" class="text-[11px] font-medium">Nghe ➔ Chọn • 听音选义</span>
           </button>
           <button type="button" data-quiz-mode="listen_type"
-            class="quiz-mode-btn py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center">
+            class="quiz-mode-btn py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center">
             ✍️ Nghe dịch<br><span id="i18nQModeListenType" class="text-[11px] font-medium">Nghe ➔ Gõ • 听音输入</span>
           </button>
           <button type="button" data-quiz-mode="mixed"
-            class="quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center">
+            class="quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center">
             🎲 Trộn<br><span id="i18nQModeMixed" class="text-[11px] font-medium">Ngẫu nhiên • 随机</span>
           </button>
         </div>
 
-        <p id="quizQuestion" class="text-base sm:text-lg font-semibold text-slate-800">
+        <p id="quizQuestion" class="text-base sm:text-lg font-semibold text-[#1D1D1F]">
           Chọn nghĩa đúng của câu tiếng Trung sau:
         </p>
 
         <!-- Khung đề bài -->
-        <div id="quizPromptBox" class="p-5 bg-slate-50 border border-slate-200 rounded-xl text-center space-y-2">
+        <div id="quizPromptBox" class="p-6 bg-[#F5F5F7] border border-black/[0.05] rounded-2xl text-center space-y-2">
           <!-- Hiển thị văn bản (Chữ Hán hoặc Tiếng Việt) -->
-          <div id="quizTextPrompt" class="space-y-1">
-            <div id="quizTargetHanzi" class="text-2xl font-bold text-indigo-700"></div>
-            <div id="quizTargetPinyin" class="text-sm font-mono text-slate-500"></div>
+          <div id="quizTextPrompt" class="space-y-1.5">
+            <div id="quizTargetHanzi" class="text-2xl font-bold text-[#1D1D1F]"></div>
+            <div id="quizTargetPinyin" class="text-sm font-medium text-[#0071E3]"></div>
           </div>
 
           <!-- Điều khiển âm thanh cho chế độ Nghe -->
           <div id="quizAudioPrompt" class="hidden py-2 space-y-3">
             <div class="flex justify-center items-center gap-3">
               <button type="button" id="btnQuizPlayNormal"
-                class="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-md transition flex items-center gap-2 text-sm">
+                class="px-5 py-3 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold shadow-sm apple-btn flex items-center gap-2 text-sm">
                 <i class="fa-solid fa-volume-high text-lg"></i> <span id="i18nBtnPlayNormal">Nghe câu tiếng Trung • 播放中文句子</span>
               </button>
               <button type="button" id="btnQuizPlaySlow"
-                class="px-3.5 py-3 rounded-2xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium shadow-sm transition flex items-center gap-1.5 text-xs"
+                class="px-4 py-3 rounded-full bg-white hover:bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] font-semibold shadow-sm apple-btn flex items-center gap-1.5 text-xs"
                 title="Nghe tốc độ chậm / 慢速播放">
-                <i class="fa-solid fa-turtle text-indigo-600"></i> <span id="i18nBtnPlaySlow">Nghe chậm • 慢速</span>
+                <i class="fa-solid fa-turtle text-[#0071E3]"></i> <span id="i18nBtnPlaySlow">Nghe chậm • 慢速</span>
               </button>
             </div>
-            <p id="quizListenHint" class="text-xs text-slate-400 italic">Bấm nút loa để nghe lại (Chữ Hán sẽ hiện sau khi bạn trả lời) • 点击喇叭重听（答题后显示汉字）</p>
-            <div id="quizListeningReveal" class="hidden pt-2 border-t border-slate-200/80 space-y-1">
-              <div id="quizRevealHanzi" class="text-xl font-bold text-indigo-700"></div>
-              <div id="quizRevealPinyin" class="text-xs font-mono text-slate-500"></div>
+            <p id="quizListenHint" class="text-xs text-[#86868B]">Bấm nút loa để nghe lại (Chữ Hán sẽ hiện sau khi bạn trả lời) • 点击喇叭重听（答题后显示汉字）</p>
+            <div id="quizListeningReveal" class="hidden pt-2 border-t border-black/[0.06] space-y-1">
+              <div id="quizRevealHanzi" class="text-xl font-bold text-[#1D1D1F]"></div>
+              <div id="quizRevealPinyin" class="text-xs font-medium text-[#0071E3]"></div>
             </div>
           </div>
         </div>
@@ -478,191 +582,215 @@
           <div class="flex flex-col sm:flex-row gap-2">
             <input type="text" id="quizTypingInput"
               placeholder="Nhập nghĩa tiếng Việt bạn nghe được (chấp nhận từ đồng nghĩa)... / 输入您听到的越南语意思..."
-              class="flex-1 border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+              class="flex-1 apple-input rounded-2xl px-4 py-3 text-sm">
             <button type="button" id="btnSubmitTyping"
-              class="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow transition shrink-0 flex items-center justify-center gap-1.5">
+              class="px-5 py-3 bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold rounded-2xl text-sm shadow-sm apple-btn shrink-0 flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-check"></i> <span id="i18nBtnSubmitTyping">Kiểm tra • 提交</span>
             </button>
           </div>
-          <p class="text-xs text-slate-400">
-            <i class="fa-solid fa-wand-magic-sparkles text-amber-500 mr-1"></i><span id="i18nTypingSynonymHint">Hệ thống tự động chấp nhận các từ đồng nghĩa và cách diễn đạt tương đương • 系统支持同义词与相近表达评判。</span>
+          <p class="text-xs text-[#86868B]">
+            <i class="fa-solid fa-wand-magic-sparkles text-[#FF9500] mr-1"></i><span id="i18nTypingSynonymHint">Hệ thống tự động chấp nhận các từ đồng nghĩa và cách diễn đạt tương đương • 系统支持同义词与相近表达评判。</span>
           </p>
         </div>
 
-        <div id="quizFeedback" class="hidden p-3.5 rounded-xl text-sm font-medium"></div>
+        <div id="quizFeedback" class="hidden p-4 rounded-2xl text-sm font-medium"></div>
         <div class="flex justify-end pt-2">
           <button id="btnNextQuiz"
-            class="hidden px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition">
+            class="hidden px-5 py-2.5 bg-[#0071E3] text-white rounded-full font-semibold hover:bg-[#0077ED] apple-btn">
             <span id="i18nBtnNextQuiz">Câu tiếp theo • 下一题</span> <i class="fa-solid fa-arrow-right ml-1"></i>
           </button>
           <button id="btnRestartQuiz"
-            class="hidden px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition">
+            class="hidden px-5 py-2.5 bg-[#34C759] text-white rounded-full font-semibold hover:bg-[#2DB84D] apple-btn">
             <span id="i18nBtnRestartQuiz">Làm lại lượt kiểm tra mới • 重新开始测验</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- List Mode View -->
-    <div id="viewList" class="hidden space-y-4">
+    <!-- List & Decks Mode View (Quản lý & Chỉnh sửa Bộ thẻ + Danh sách câu) -->
+    <div id="viewList" class="hidden space-y-5">
+      <!-- Khu vực Quản lý Bộ thẻ (Decks Overview - Cho phép Đổi tên, Thêm câu, Xóa bộ thẻ sau khi thêm) -->
+      <div class="apple-surface p-5 rounded-[24px] space-y-3.5">
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-xl bg-[#FF9500]/15 text-[#FF9500] flex items-center justify-center text-sm">
+              <i class="fa-solid fa-layer-group"></i>
+            </span>
+            <div>
+              <h3 id="i18nDecksSectionTitle" class="font-bold text-sm sm:text-base text-[#1D1D1F]">Bộ thẻ của bạn • 您的牌组（文件夹）</h3>
+              <p id="i18nDecksSectionSubtitle" class="text-[11px] text-[#86868B]">Bấm vào bộ thẻ để lọc, hoặc bấm biểu tượng ✏️ để đổi tên, thêm câu hay chỉnh sửa bộ thẻ sau khi tạo.</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btnCreateDeckInList"
+              class="text-xs px-3.5 py-2 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold shadow-sm apple-btn">
+              <i class="fa-solid fa-folder-plus mr-1"></i> <span id="i18nBtnCreateDeckInList">+ Tạo bộ thẻ mới • 新建牌组</span>
+            </button>
+          </div>
+        </div>
+        <div id="decksOverviewGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5"></div>
+      </div>
+
+      <!-- Thanh tìm kiếm & lọc danh sách thẻ -->
       <div
-        class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
+        class="apple-surface p-4 rounded-[24px] flex flex-wrap justify-between items-center gap-3">
         <div class="flex items-center gap-3 flex-wrap">
-          <h3 id="i18nListHeaderTitle" class="font-bold text-slate-700">Danh sách toàn bộ thẻ câu • 全部卡片列表</h3>
+          <h3 id="i18nListHeaderTitle" class="font-bold text-[#1D1D1F]">Danh sách toàn bộ thẻ câu • 全部卡片列表</h3>
           <span id="totalCardCount"
-            class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full"></span>
+            class="text-xs font-bold text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full"></span>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <select id="listFolderSelect"
-            class="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 font-medium">
-            <option value="all">📁 Tất cả thư mục</option>
+            class="text-xs border border-black/[0.08] rounded-full px-3 py-2 bg-[#F5F5F7] text-[#1D1D1F] font-semibold outline-none">
+            <option value="all">📁 Tất cả bộ thẻ</option>
           </select>
           <input type="text" id="searchListInput" placeholder="Tìm chữ Hán, Pinyin, nghĩa... / 搜索..."
-            class="text-xs border border-slate-300 rounded-lg px-3 py-1.5 w-48 focus:ring-2 focus:ring-indigo-500 outline-none">
+            class="text-xs apple-input rounded-full px-3.5 py-2 w-52">
           <input type="file" id="inputImportJson" accept=".json,application/json" class="hidden">
           <button id="btnImportJson"
-            class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold transition">
+            class="text-xs px-3.5 py-2 rounded-full bg-[#0071E3]/10 hover:bg-[#0071E3]/20 text-[#0071E3] font-semibold apple-btn">
             <i class="fa-solid fa-file-import mr-1"></i> <span id="i18nBtnImportJson">Nhập JSON • 导入</span>
           </button>
           <button id="btnExportJson"
-            class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition">
+            class="text-xs px-3.5 py-2 rounded-full bg-black/[0.05] hover:bg-black/[0.09] text-[#1D1D1F] font-semibold apple-btn">
             <i class="fa-solid fa-download mr-1"></i> <span id="i18nBtnExportJson">Xuất JSON • 导出</span>
           </button>
         </div>
       </div>
       <div id="allCardsTable"
-        class="bg-white rounded-xl shadow-sm border border-slate-200 divide-y divide-slate-100 overflow-hidden"></div>
+        class="apple-surface rounded-[24px] divide-y divide-black/[0.05] overflow-hidden"></div>
     </div>
 
   </main>
 
-  <!-- Modal 1: Thêm 1 Câu Mới (Có chọn/tạo Thư mục & Tự điền bằng AI) -->
+  <!-- Modal 1: Thêm / Chỉnh sửa Câu Học (Hỗ trợ cả Thêm mới & Sửa thẻ đã có) -->
   <div id="modalAddCard"
-    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-4">
-      <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="text-lg font-bold text-slate-800">
-          <i class="fa-solid fa-plus-circle text-emerald-500 mr-2"></i><span id="i18nModalAddTitle">Thêm câu học mới • 添加新句子</span>
+    class="hidden fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white/95 backdrop-blur-2xl w-full max-w-lg rounded-[28px] shadow-[0_24px_60px_rgba(0,0,0,0.16)] border border-black/[0.06] p-6 sm:p-7 space-y-4">
+      <div class="flex justify-between items-center border-b border-black/[0.06] pb-3.5">
+        <h3 class="text-lg font-bold text-[#1D1D1F] flex items-center gap-2">
+          <i id="modalCardHeaderIcon" class="fa-solid fa-plus-circle text-[#0071E3]"></i>
+          <span id="i18nModalAddTitle">Thêm câu học mới • 添加新句子</span>
         </h3>
-        <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <button id="btnCloseModal" class="w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center text-lg font-bold">&times;</button>
       </div>
 
-      <div class="space-y-3">
-        <!-- Chọn hoặc Tạo thư mục mới -->
+      <div class="space-y-3.5">
+        <!-- Chọn hoặc Tạo bộ thẻ mới -->
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">
-            <i class="fa-solid fa-folder text-amber-500 mr-1"></i><span id="i18nModalAddFolderLabel">Thư mục bộ thẻ • 所属文件夹:</span>
+          <label class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+            <i class="fa-solid fa-folder text-[#FF9500] mr-1"></i><span id="i18nModalAddFolderLabel">Bộ thẻ (Thư mục) • 所属牌组:</span>
           </label>
           <div class="flex gap-2">
             <select id="inputCardFolderSelect"
-              class="flex-1 border rounded-lg p-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none"></select>
+              class="flex-1 apple-input rounded-2xl px-3.5 py-2.5 text-sm font-medium text-[#1D1D1F]"></select>
             <button type="button" id="btnCreateFolderInSingle"
-              class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold shrink-0 transition">
-              + Thư mục mới • 新建
+              class="px-3.5 py-2.5 rounded-2xl bg-black/[0.05] hover:bg-black/[0.09] text-[#1D1D1F] text-xs font-semibold shrink-0 apple-btn">
+              + Bộ thẻ mới • 新建
             </button>
           </div>
         </div>
 
         <div>
-          <div class="flex justify-between items-center mb-1">
-            <label id="i18nModalAddHzLabel" class="block text-xs font-semibold text-slate-600">Chữ Hán (Chỉ cần nhập mục này) • 汉字:</label>
+          <div class="flex justify-between items-center mb-1.5">
+            <label id="i18nModalAddHzLabel" class="block text-xs font-semibold text-[#1D1D1F]">Chữ Hán (Chỉ cần nhập mục này) • 汉字:</label>
             <button type="button" id="btnAutoFillSingle"
-              class="text-xs bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-md font-semibold shadow-sm transition flex items-center gap-1">
+              class="text-xs bg-[#FF9500] hover:bg-[#F08800] text-white px-3 py-1 rounded-full font-semibold shadow-sm apple-btn flex items-center gap-1">
               <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="i18nBtnAutoFillSingle">Tự động điền AI • AI自动填充</span>
             </button>
           </div>
           <input type="text" id="inputHz" placeholder="Ví dụ / 例如: 我非常喜欢学习汉语。"
-            class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            class="w-full apple-input rounded-2xl px-3.5 py-2.5 text-sm">
         </div>
         <div>
-          <label id="i18nModalAddPyLabel" class="block text-xs font-semibold text-slate-600 mb-1">Pinyin (Tự động tạo khi gõ chữ Hán) • 拼音:</label>
+          <label id="i18nModalAddPyLabel" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">Pinyin (Tự động tạo khi gõ chữ Hán) • 拼音:</label>
           <input type="text" id="inputPy" placeholder="Tự động điền / 自动生成..."
-            class="w-full border rounded-lg p-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            class="w-full apple-input rounded-2xl px-3.5 py-2.5 text-sm">
         </div>
         <div>
-          <label id="i18nModalAddViLabel" class="block text-xs font-semibold text-slate-600 mb-1">Nghĩa tiếng Việt • 越南语释义:</label>
+          <label id="i18nModalAddViLabel" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">Nghĩa tiếng Việt • 越南语释义:</label>
           <input type="text" id="inputVi" placeholder="Bấm 'Tự động điền' hoặc tự nhập... / 点击AI填充或手动输入"
-            class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+            class="w-full apple-input rounded-2xl px-3.5 py-2.5 text-sm">
         </div>
         <div>
-          <label id="i18nModalAddGrammarLabel" class="block text-xs font-semibold text-slate-600 mb-1">Giải thích từ vựng / Ngữ pháp • 词汇与语法解析:</label>
+          <label id="i18nModalAddGrammarLabel" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">Giải thích từ vựng / Ngữ pháp • 词汇与语法解析:</label>
           <textarea id="inputGrammar" rows="3"
             placeholder="Bấm 'Tự động điền' để AI phân tích từ vựng & cấu trúc câu... / 点击AI填充自动解析词汇与语法"
-            class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+            class="w-full apple-input rounded-2xl p-3 text-sm"></textarea>
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-2">
+      <div class="flex justify-end gap-2 pt-2 border-t border-black/[0.06]">
         <button id="btnCancelAdd"
-          class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200">Hủy • 取消</button>
+          class="px-4 py-2.5 rounded-full bg-black/[0.05] text-[#1D1D1F] font-semibold text-sm hover:bg-black/[0.09] apple-btn">Hủy • 取消</button>
         <button id="btnSaveCard"
-          class="px-5 py-2 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 shadow">Lưu thẻ mới • 保存</button>
+          class="px-5 py-2.5 rounded-full bg-[#0071E3] text-white font-semibold text-sm hover:bg-[#0077ED] shadow-sm apple-btn">Lưu thẻ • 保存</button>
       </div>
     </div>
   </div>
 
-  <!-- Modal 2: Import Hàng Loạt (Có chọn/tạo Thư mục & Chỉ cần dán câu tiếng Trung) -->
+  <!-- Modal 2: Import Hàng Loạt (Cho phép chỉnh sửa trực tiếp các câu sau khi AI phân tích) -->
   <div id="modalBulkImport"
-    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] flex flex-col">
-      <div class="flex justify-between items-center border-b pb-3">
+    class="hidden fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white/95 backdrop-blur-2xl w-full max-w-3xl rounded-[28px] shadow-[0_24px_60px_rgba(0,0,0,0.16)] border border-black/[0.06] p-6 sm:p-7 space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-black/[0.06] pb-3.5">
         <div>
-          <h3 class="text-lg font-bold text-slate-800">
-            <i class="fa-solid fa-wand-magic-sparkles text-amber-500 mr-2"></i><span id="i18nModalBulkTitle">Import nhanh bằng AI • AI批量导入中文句子</span>
+          <h3 class="text-lg font-bold text-[#1D1D1F]">
+            <i class="fa-solid fa-wand-magic-sparkles text-[#FF9500] mr-2"></i><span id="i18nModalBulkTitle">Import nhanh bằng AI • AI批量导入中文句子</span>
           </h3>
-          <p id="i18nModalBulkSubtitle" class="text-xs text-slate-500 mt-0.5">Mỗi dòng 1 câu tiếng Trung. Hệ thống tự động tạo Pinyin, dịch nghĩa tiếng Việt và phân tích ngữ pháp.</p>
+          <p id="i18nModalBulkSubtitle" class="text-xs text-[#86868B] mt-0.5">Mỗi dòng 1 câu tiếng Trung. Bạn có thể chỉnh sửa trực tiếp từng câu ngay sau khi AI phân tích.</p>
         </div>
-        <button id="btnCloseBulkModal" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <button id="btnCloseBulkModal" class="w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center text-lg font-bold">&times;</button>
       </div>
 
-      <div class="space-y-3 overflow-y-auto flex-1 pr-1">
+      <div class="space-y-3.5 overflow-y-auto flex-1 pr-1">
         <!-- Chọn hoặc Tạo thư mục cho loạt thẻ import -->
         <div
-          class="bg-amber-50/60 border border-amber-200/70 p-3 rounded-xl flex flex-wrap items-center justify-between gap-2">
-          <label class="text-xs font-bold text-slate-700">
-            <i class="fa-solid fa-folder-plus text-amber-500 mr-1"></i><span id="i18nModalBulkFolderLabel">Lưu các câu này vào thư mục • 保存至文件夹:</span>
+          class="bg-[#F5F5F7] border border-black/[0.06] p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-2">
+          <label class="text-xs font-bold text-[#1D1D1F]">
+            <i class="fa-solid fa-folder-plus text-[#FF9500] mr-1"></i><span id="i18nModalBulkFolderLabel">Lưu các câu này vào bộ thẻ • 保存至牌组:</span>
           </label>
           <div class="flex items-center gap-2 flex-1 sm:max-w-sm">
             <select id="bulkFolderSelect"
-              class="flex-1 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold bg-white outline-none"></select>
+              class="flex-1 bg-white border border-black/[0.08] rounded-xl px-3 py-1.5 text-xs font-semibold outline-none"></select>
             <button type="button" id="btnCreateFolderInBulk"
-              class="px-3 py-1.5 rounded-lg bg-white hover:bg-amber-100 text-amber-700 border border-amber-300 text-xs font-semibold shrink-0 transition">
-              + Thư mục mới • 新建
+              class="px-3 py-1.5 rounded-xl bg-white hover:bg-black/[0.04] text-[#0071E3] border border-black/[0.08] text-xs font-semibold shrink-0 apple-btn">
+              + Bộ thẻ mới • 新建
             </button>
           </div>
         </div>
 
         <div>
-          <label id="i18nModalBulkInputLabel" class="block text-xs font-semibold text-slate-700 mb-1">Danh sách câu tiếng Trung (mỗi câu 1 dòng) • 中文句子列表（每行一句）:</label>
-          <textarea id="bulkInputHz" rows="5"
+          <label id="i18nModalBulkInputLabel" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">Danh sách câu tiếng Trung (mỗi câu 1 dòng) • 中文句子列表（每行一句）:</label>
+          <textarea id="bulkInputHz" rows="4"
             placeholder="Ví dụ / 例如:&#10;今天天气非常好，我们去公园散步吧。&#10;虽然汉语有点儿难，但是很有意思。&#10;你周末一般喜欢做什么？"
-            class="w-full border rounded-xl p-3 text-sm focus:ring-2 focus:ring-amber-500 outline-none font-sans"></textarea>
+            class="w-full apple-input rounded-2xl p-3.5 text-sm font-sans"></textarea>
         </div>
 
-        <div class="flex justify-between items-center">
-          <span id="bulkStatusText" class="text-xs text-slate-500 italic">Mẹo: Dán 5 - 20 câu mỗi lần để AI phân tích nhanh và chuẩn nhất.</span>
+        <div class="flex justify-between items-center gap-2 flex-wrap">
+          <span id="bulkStatusText" class="text-xs text-[#86868B]">Mẹo: Sau khi phân tích, bạn có thể sửa trực tiếp Chữ Hán, Pinyin, Nghĩa hoặc Ngữ pháp bên dưới.</span>
           <button id="btnAnalyzeBulk"
-            class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-sm shadow transition flex items-center gap-2">
+            class="px-4 py-2 rounded-full bg-[#FF9500] hover:bg-[#F08800] text-white font-semibold text-sm shadow-sm apple-btn flex items-center gap-2">
             <i class="fa-solid fa-bolt"></i> <span id="i18nBtnAnalyzeBulk">Phân tích & Tự điền tất cả • AI解析全部</span>
           </button>
         </div>
 
-        <!-- Bảng xem trước kết quả -->
+        <!-- Bảng xem trước & chỉnh sửa trực tiếp kết quả -->
         <div id="bulkPreviewContainer" class="hidden space-y-2 pt-2">
           <div class="flex justify-between items-center">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Xem trước kết quả / 预览结果 (<span
+            <h4 class="text-xs font-bold uppercase tracking-wider text-[#86868B]">Xem trước & Chỉnh sửa trực tiếp / 预览与直接编辑 (<span
                 id="bulkPreviewCount">0</span>):</h4>
           </div>
           <div id="bulkPreviewList"
-            class="border rounded-xl divide-y divide-slate-100 max-h-60 overflow-y-auto bg-slate-50"></div>
+            class="border border-black/[0.08] rounded-2xl divide-y divide-black/[0.06] max-h-64 overflow-y-auto bg-[#F5F5F7]/60"></div>
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-3 border-t">
+      <div class="flex justify-end gap-2 pt-3 border-t border-black/[0.06]">
         <button id="btnCancelBulk"
-          class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200">Đóng • 关闭</button>
+          class="px-4 py-2.5 rounded-full bg-black/[0.05] text-[#1D1D1F] font-semibold text-sm hover:bg-black/[0.09] apple-btn">Đóng • 关闭</button>
         <button id="btnSaveBulk" disabled
-          class="px-5 py-2 rounded-lg bg-emerald-600 disabled:bg-slate-300 text-white font-semibold text-sm hover:bg-emerald-700 shadow transition">
+          class="px-5 py-2.5 rounded-full bg-[#0071E3] disabled:bg-slate-300 text-white font-semibold text-sm hover:bg-[#0077ED] shadow-sm apple-btn">
           <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Lưu tất cả vào bộ thẻ • 保存全部
         </button>
       </div>
@@ -671,47 +799,47 @@
 
   <!-- Modal 3: Cấu hình AI & Đồng bộ Cloud (Chỉ dành riêng cho Owner, không lộ thông tin DB) -->
   <div id="modalSettings"
-    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="text-lg font-bold text-slate-800">
-          <i class="fa-solid fa-sliders text-indigo-600 mr-2"></i>Cấu hình AI & Đồng bộ Cloud (Owner) • AI与云同步设置
+    class="hidden fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white/95 backdrop-blur-2xl w-full max-w-xl rounded-[28px] shadow-[0_24px_60px_rgba(0,0,0,0.16)] border border-black/[0.06] p-6 sm:p-7 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-black/[0.06] pb-3.5">
+        <h3 class="text-lg font-bold text-[#1D1D1F]">
+          <i class="fa-solid fa-sliders text-[#0071E3] mr-2"></i>Cấu hình AI & Đồng bộ Cloud (Owner) • AI与云同步设置
         </h3>
-        <button id="btnCloseSettings" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <button id="btnCloseSettings" class="w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center text-lg font-bold">&times;</button>
       </div>
 
       <div class="space-y-4 text-sm">
         <!-- Phần 1: Đồng bộ dữ liệu Cloud -->
-        <div class="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-center justify-between gap-3">
+        <div class="p-4 bg-[#F5F5F7] border border-black/[0.06] rounded-2xl flex items-center justify-between gap-3">
           <div>
-            <h4 class="font-bold text-indigo-900 text-xs sm:text-sm">
-              <i class="fa-solid fa-cloud-arrow-up text-indigo-600 mr-1"></i> Đồng bộ toàn bộ thẻ hiện tại lên Cloud • 同步本地卡片至云端
+            <h4 class="font-bold text-[#1D1D1F] text-xs sm:text-sm">
+              <i class="fa-solid fa-cloud-arrow-up text-[#0071E3] mr-1"></i> Đồng bộ toàn bộ thẻ hiện tại lên Cloud • 同步本地卡片至云端
             </h4>
-            <p class="text-[11px] text-slate-500 mt-0.5">Đẩy tất cả thẻ và thư mục đang có trên thiết bị lên Database.</p>
+            <p class="text-[11px] text-[#86868B] mt-0.5">Đẩy tất cả thẻ và bộ thẻ đang có trên thiết bị lên Database.</p>
           </div>
           <button id="btnPushLocalToCloud"
-            class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg font-semibold transition shrink-0">
+            class="text-xs bg-[#0071E3] hover:bg-[#0077ED] text-white px-3.5 py-2 rounded-full font-semibold apple-btn shrink-0">
             <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Đồng bộ ngay • 立即同步
           </button>
         </div>
 
         <!-- Phần 2: OpenRouter AI (Không hiển thị lại key cũ ra DOM) -->
-        <div class="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl space-y-2.5">
-          <h4 class="font-bold text-amber-900 flex items-center gap-1.5">
-            <i class="fa-solid fa-wand-magic-sparkles text-amber-600"></i> OpenRouter AI (Dịch nghĩa & Phân tích ngữ pháp • AI翻译与语法解析)
+        <div class="p-4 bg-[#F5F5F7] border border-black/[0.06] rounded-2xl space-y-3">
+          <h4 class="font-bold text-[#1D1D1F] flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles text-[#FF9500]"></i> OpenRouter AI (Dịch nghĩa & Phân tích ngữ pháp • AI翻译与语法解析)
           </h4>
-          <p class="text-xs text-slate-600 leading-relaxed">
+          <p class="text-xs text-[#86868B] leading-relaxed">
             Key được mã hóa theo mật khẩu Chủ sở hữu và không bao giờ hiển thị lại trên giao diện web. Chỉ nhập vào ô dưới đây khi bạn muốn <b>cập nhật key mới</b>.
           </p>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">OpenRouter API Key:</label>
+            <label class="block text-xs font-semibold text-[#1D1D1F] mb-1">OpenRouter API Key:</label>
             <input type="password" id="cfgOpenRouterKey" autocomplete="off" placeholder="Nhập key mới (sk-or-v1-...) hoặc để trống nếu giữ nguyên"
-              class="w-full border rounded-lg p-2 text-xs font-mono bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+              class="w-full bg-white border border-black/[0.08] rounded-xl p-2.5 text-xs font-mono focus:ring-2 focus:ring-[#0071E3] outline-none">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Model AI ưu tiên trên OpenRouter • 优先 AI 模型:</label>
+            <label class="block text-xs font-semibold text-[#1D1D1F] mb-1">Model AI ưu tiên trên OpenRouter • 优先 AI 模型:</label>
             <input type="text" id="cfgOpenRouterModel" list="openRouterModelsList" placeholder="deepseek/deepseek-chat"
-              class="w-full border rounded-lg p-2 text-xs font-mono bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+              class="w-full bg-white border border-black/[0.08] rounded-xl p-2.5 text-xs font-mono focus:ring-2 focus:ring-[#0071E3] outline-none">
             <datalist id="openRouterModelsList">
               <option value="deepseek/deepseek-chat">DeepSeek V3 (Rất giỏi tiếng Trung & Ngữ pháp HSK)</option>
               <option value="google/gemini-2.0-flash-001">Google Gemini 2.0 Flash (Tốc độ rất nhanh)</option>
@@ -724,97 +852,97 @@
         </div>
       </div>
 
-      <div class="flex justify-end gap-2 pt-2 border-t">
+      <div class="flex justify-end gap-2 pt-2 border-t border-black/[0.06]">
         <button id="btnCancelSettings"
-          class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200">Đóng • 关闭</button>
+          class="px-4 py-2.5 rounded-full bg-black/[0.05] text-[#1D1D1F] font-semibold text-sm hover:bg-black/[0.09] apple-btn">Đóng • 关闭</button>
         <button id="btnSaveSettings"
-          class="px-5 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 shadow">Lưu cấu hình • 保存设置</button>
+          class="px-5 py-2.5 rounded-full bg-[#0071E3] text-white font-semibold text-sm hover:bg-[#0077ED] shadow-sm apple-btn">Lưu cấu hình • 保存设置</button>
       </div>
     </div>
   </div>
 
   <!-- Modal 4: Quản lý Tài khoản & Tiến trình học theo User -->
   <div id="modalUserAccount"
-    class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-user-shield text-emerald-600"></i>
+    class="hidden fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white/95 backdrop-blur-2xl w-full max-w-lg rounded-[28px] shadow-[0_24px_60px_rgba(0,0,0,0.16)] border border-black/[0.06] p-6 sm:p-7 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-black/[0.06] pb-3.5">
+        <h3 class="text-lg font-bold text-[#1D1D1F] flex items-center gap-2">
+          <i class="fa-solid fa-user-shield text-[#34C759]"></i>
           <span id="i18nUserModalTitle">Tài khoản & Tiến trình học cá nhân • 个人账户与学习进度</span>
         </h3>
-        <button id="btnCloseUserModal" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        <button id="btnCloseUserModal" class="w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center text-lg font-bold">&times;</button>
       </div>
 
       <!-- Thông tin User hiện tại -->
-      <div class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex items-center justify-between gap-3">
+      <div class="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] flex items-center justify-between gap-3">
         <div class="space-y-0.5">
-          <div id="i18nLoggedInAsLabel" class="text-xs text-slate-500">Đang đăng nhập với tài khoản • 当前登录账户:</div>
-          <div class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <div id="i18nLoggedInAsLabel" class="text-xs text-[#86868B]">Đang đăng nhập với tài khoản • 当前登录账户:</div>
+          <div class="text-base font-bold text-[#1D1D1F] flex items-center gap-2">
             <span id="userModalDisplayName">---</span>
-            <span id="userModalRoleBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-600 text-white font-semibold">Chủ sở hữu</span>
+            <span id="userModalRoleBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-[#34C759] text-white font-semibold">Chủ sở hữu</span>
           </div>
-          <div id="userModalStatsText" class="text-xs text-emerald-700 font-medium pt-0.5"></div>
+          <div id="userModalStatsText" class="text-xs text-[#1D8338] font-medium pt-0.5"></div>
         </div>
         <button type="button" id="btnLogoutInModal"
-          class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition shrink-0">
+          class="px-3.5 py-2 rounded-full bg-[#FF3B30] hover:bg-[#E03025] text-white text-xs font-bold shadow-sm apple-btn shrink-0">
           <i class="fa-solid fa-right-from-bracket mr-1"></i> <span id="i18nBtnLogoutModal">Đăng xuất • 退出</span>
         </button>
       </div>
 
       <!-- Đổi mật khẩu -->
-      <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-600">
-          <i class="fa-solid fa-key text-indigo-500 mr-1"></i> <span id="i18nChangePwdHeader">Đổi mật khẩu của bạn • 修改密码</span>
+      <div class="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] space-y-2.5">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-[#86868B]">
+          <i class="fa-solid fa-key text-[#0071E3] mr-1"></i> <span id="i18nChangePwdHeader">Đổi mật khẩu của bạn • 修改密码</span>
         </h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <input type="password" id="inputNewPassword" placeholder="Mật khẩu mới / 新密码..."
-            class="border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            class="border border-black/[0.08] rounded-xl px-3.5 py-2 text-xs bg-white focus:ring-2 focus:ring-[#0071E3] outline-none">
           <input type="password" id="inputConfirmNewPassword" placeholder="Nhập lại mật khẩu mới / 确认新密码..."
-            class="border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            class="border border-black/[0.08] rounded-xl px-3.5 py-2 text-xs bg-white focus:ring-2 focus:ring-[#0071E3] outline-none">
         </div>
         <div class="flex justify-end">
           <button type="button" id="btnChangePassword"
-            class="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition">
+            class="px-4 py-1.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold apple-btn">
             Cập nhật mật khẩu • 更新密码
           </button>
         </div>
       </div>
 
       <!-- Quản trị viên (Chỉ hiện với Owner) -->
-      <div id="ownerAdminSection" class="hidden p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-3">
+      <div id="ownerAdminSection" class="hidden p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] space-y-3">
         <div class="flex items-center justify-between gap-2">
-          <h4 class="text-xs font-bold uppercase tracking-wider text-amber-900">
-            <i class="fa-solid fa-users-gear text-amber-600 mr-1"></i> Quản lý User (Owner) • 用户管理
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#1D1D1F]">
+            <i class="fa-solid fa-users-gear text-[#FF9500] mr-1"></i> Quản lý User (Owner) • 用户管理
           </h4>
-          <label class="flex items-center gap-1.5 text-xs font-semibold text-amber-900 cursor-pointer select-none">
-            <input type="checkbox" id="chkAllowPublicRegister" checked class="rounded text-amber-600 focus:ring-amber-500">
+          <label class="flex items-center gap-1.5 text-xs font-semibold text-[#1D1D1F] cursor-pointer select-none">
+            <input type="checkbox" id="chkAllowPublicRegister" checked class="rounded text-[#0071E3] focus:ring-[#0071E3]">
             <span>Cho phép khách tự đăng ký • 允许公开注册</span>
           </label>
         </div>
-        <p class="text-[11px] text-slate-600 leading-relaxed">
+        <p class="text-[11px] text-[#86868B] leading-relaxed">
           Mỗi user có tiến trình học (Đã thuộc, Chưa nhớ, lịch ôn SRS) hoàn toàn độc lập, không ghi đè lên tiến trình của bạn và không có quyền xóa thẻ của bạn.
         </p>
 
         <!-- Tạo nhanh user mới bởi Owner -->
         <div class="flex flex-col sm:flex-row gap-2 pt-1">
           <input type="text" id="adminNewUsername" placeholder="Tên user mới / 新用户名..."
-            class="flex-1 border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs bg-white outline-none">
+            class="flex-1 border border-black/[0.08] rounded-xl px-3 py-1.5 text-xs bg-white outline-none">
           <input type="password" id="adminNewPassword" placeholder="Mật khẩu / 密码..."
-            class="flex-1 border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs bg-white outline-none">
+            class="flex-1 border border-black/[0.08] rounded-xl px-3 py-1.5 text-xs bg-white outline-none">
           <button type="button" id="btnAdminCreateUser"
-            class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shrink-0 transition">
+            class="px-3.5 py-1.5 rounded-full bg-[#FF9500] hover:bg-[#F08800] text-white text-xs font-semibold shrink-0 apple-btn">
             + Thêm User • 添加
           </button>
         </div>
 
         <!-- Danh sách các user trong DB -->
-        <div id="adminUserListContainer" class="divide-y divide-amber-200/60 bg-white rounded-lg border border-amber-200 max-h-40 overflow-y-auto text-xs">
+        <div id="adminUserListContainer" class="divide-y divide-black/[0.06] bg-white rounded-xl border border-black/[0.06] max-h-40 overflow-y-auto text-xs">
         </div>
       </div>
 
-      <div class="flex justify-end pt-2 border-t">
+      <div class="flex justify-end pt-2 border-t border-black/[0.06]">
         <button type="button" id="btnCloseUserModalBottom"
-          class="px-4 py-2 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm hover:bg-slate-200">Đóng • 关闭</button>
+          class="px-4 py-2 rounded-full bg-black/[0.05] text-[#1D1D1F] font-semibold text-sm hover:bg-black/[0.09] apple-btn">Đóng • 关闭</button>
       </div>
     </div>
   </div>
@@ -1369,14 +1497,147 @@
     }
 
     // =========================================================================
-    // ĐỒNG BỘ DANH SÁCH THƯ MỤC TRÊN TOÀN GIAO DIỆN
+    // ĐỒNG BỘ & CHỈNH SỬA BỘ THẺ (THƯ MỤC) TRÊN TOÀN GIAO DIỆN
     // =========================================================================
     const studyFolderSelect = document.getElementById('studyFolderSelect');
     const listFolderSelect = document.getElementById('listFolderSelect');
     const inputCardFolderSelect = document.getElementById('inputCardFolderSelect');
     const bulkFolderSelect = document.getElementById('bulkFolderSelect');
     const quizFolderChips = document.getElementById('quizFolderChips');
+    const decksOverviewGrid = document.getElementById('decksOverviewGrid');
     let selectedQuizFolders = new Set(['all']); // 'all' hoặc tập hợp tên các thư mục được chọn
+
+    // Đổi tên bộ thẻ (Cập nhật toàn bộ thẻ bên trong và đồng bộ lên Cloud)
+    async function renameFolderDeckInteractive(oldFolderName) {
+      if (currentUser && currentUser.role !== 'owner') {
+        alert(t("Chỉ tài khoản Chủ sở hữu (Owner) mới có quyền đổi tên bộ thẻ chung!", "仅所有者 (Owner) 账户有权修改公共牌组名称！"));
+        return;
+      }
+      const targetOld = (oldFolderName && oldFolderName !== 'all') ? oldFolderName : '';
+      if (!targetOld) {
+        alert(t("Vui lòng chọn một bộ thẻ cụ thể để đổi tên (hoặc bấm vào tab 'Bộ thẻ' để sửa từng bộ thẻ)!", "请先选择一个具体牌组进行重命名（或前往“牌组”标签页管理）！"));
+        return;
+      }
+      const newNameRaw = prompt(
+        t(`Nhập tên mới cho bộ thẻ "${targetOld}":`, `请输入牌组 "${targetOld}" 的新名称:`),
+        targetOld
+      );
+      if (!newNameRaw || !newNameRaw.trim()) return;
+      const newName = newNameRaw.trim();
+      if (newName === targetOld) return;
+
+      // Cập nhật danh sách customFolders
+      customFolders = customFolders.map(f => f === targetOld ? newName : f);
+      if (!customFolders.includes(newName)) customFolders.push(newName);
+
+      // Cập nhật tất cả thẻ thuộc bộ thẻ cũ sang tên bộ thẻ mới
+      const affectedCards = [];
+      cards.forEach(c => {
+        if ((c.folder || DEFAULT_FOLDER) === targetOld) {
+          c.folder = newName;
+          affectedCards.push(c);
+        }
+      });
+
+      if (studyFolderSelect.value === targetOld) studyFolderSelect.value = newName;
+      if (listFolderSelect.value === targetOld) listFolderSelect.value = newName;
+
+      saveToLocalStorage();
+      refreshAllFolderSelectors();
+      applyFilter(false);
+      renderList();
+
+      if (affectedCards.length > 0) {
+        await upsertMultipleCardsToCloud(affectedCards);
+      }
+    }
+
+    // Xóa hoặc gộp bộ thẻ
+    async function deleteFolderDeckInteractive(folderName) {
+      if (currentUser && currentUser.role !== 'owner') {
+        alert(t("Chỉ tài khoản Chủ sở hữu (Owner) mới có quyền xóa bộ thẻ!", "仅所有者 (Owner) 账户有权删除牌组！"));
+        return;
+      }
+      if (!folderName || folderName === DEFAULT_FOLDER) {
+        alert(t(`Không thể xóa bộ thẻ "${DEFAULT_FOLDER}"! Bạn có thể đổi tên hoặc sửa từng thẻ bên trong.`, `无法删除默认牌组 "${DEFAULT_FOLDER}"！您可以重命名或编辑其中的卡片。`));
+        return;
+      }
+      const cardsInDeck = cards.filter(c => (c.folder || DEFAULT_FOLDER) === folderName);
+      const confirmMove = confirm(t(
+        `Bạn muốn xóa bộ thẻ "${folderName}" (${cardsInDeck.length} câu)?\n\nCác câu trong bộ thẻ này sẽ được chuyển về bộ thẻ "${DEFAULT_FOLDER}" để không bị mất dữ liệu học.`,
+        `确定要删除牌组 "${folderName}"（共 ${cardsInDeck.length} 句）吗？\n\n该牌组内的句子将自动移至 "${DEFAULT_FOLDER}"，以免丢失学习数据。`
+      ));
+      if (!confirmMove) return;
+
+      customFolders = customFolders.filter(f => f !== folderName);
+      cardsInDeck.forEach(c => { c.folder = DEFAULT_FOLDER; });
+
+      if (studyFolderSelect.value === folderName) studyFolderSelect.value = 'all';
+      if (listFolderSelect.value === folderName) listFolderSelect.value = 'all';
+
+      saveToLocalStorage();
+      refreshAllFolderSelectors();
+      applyFilter(false);
+      renderList();
+
+      if (cardsInDeck.length > 0) {
+        await upsertMultipleCardsToCloud(cardsInDeck);
+      }
+    }
+
+    function renderDecksOverview() {
+      if (!decksOverviewGrid) return;
+      const folders = getAllFolders();
+      const activeListFolder = listFolderSelect.value || 'all';
+
+      decksOverviewGrid.innerHTML = folders.map(f => {
+        const deckCards = cards.filter(c => (c.folder || DEFAULT_FOLDER) === f);
+        const total = deckCards.length;
+        const mastered = deckCards.filter(c => c.status === 'mastered').length;
+        const due = deckCards.filter(isCardDueForSRS).length;
+        const pct = total > 0 ? Math.round((mastered / total) * 100) : 0;
+        const isSelected = activeListFolder === f;
+
+        return `
+          <div class="p-4 rounded-2xl border transition cursor-pointer flex flex-col justify-between gap-2.5 ${isSelected ? 'bg-[#0071E3]/[0.06] border-[#0071E3] shadow-sm' : 'bg-[#F5F5F7]/80 hover:bg-white border-black/[0.06]'}"
+               data-deck-card="${f}">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="w-8 h-8 rounded-xl ${isSelected ? 'bg-[#0071E3] text-white' : 'bg-white text-[#FF9500]'} shadow-sm flex items-center justify-center text-xs shrink-0">
+                  <i class="fa-solid fa-folder"></i>
+                </span>
+                <div class="min-w-0">
+                  <div class="font-bold text-sm text-[#1D1D1F] truncate" title="${f}">${f}</div>
+                  <div class="text-[11px] text-[#86868B]">${total} ${t('câu', '句')} • ${t('Đã thuộc', '已掌握')} ${pct}%${due > 0 ? ` • <span class="text-[#FF3B30] font-semibold">SRS ${due}</span>` : ''}</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" data-deck-action="add-card" data-deck-name="${f}"
+                  class="w-7 h-7 rounded-full bg-white hover:bg-[#0071E3] text-[#0071E3] hover:text-white border border-black/[0.06] flex items-center justify-center text-[11px] transition"
+                  title="${t('Thêm câu mới vào bộ thẻ này', '向此牌组添加新句')}">
+                  <i class="fa-solid fa-plus"></i>
+                </button>
+                <button type="button" data-deck-action="rename" data-deck-name="${f}"
+                  class="w-7 h-7 rounded-full bg-white hover:bg-[#0071E3] text-[#1D1D1F] hover:text-white border border-black/[0.06] flex items-center justify-center text-[11px] transition"
+                  title="${t('Đổi tên bộ thẻ', '重命名牌组')}">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                ${f !== DEFAULT_FOLDER ? `
+                <button type="button" data-deck-action="delete" data-deck-name="${f}"
+                  class="w-7 h-7 rounded-full bg-white hover:bg-[#FF3B30] text-[#86868B] hover:text-white border border-black/[0.06] flex items-center justify-center text-[11px] transition"
+                  title="${t('Xóa / Gộp bộ thẻ', '删除/合并牌组')}">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+                ` : ''}
+              </div>
+            </div>
+            <div class="w-full h-1.5 bg-black/[0.06] rounded-full overflow-hidden">
+              <div class="h-full bg-[#34C759] rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
 
     function refreshAllFolderSelectors() {
       const folders = getAllFolders();
@@ -1393,7 +1654,7 @@
       const prevBulkVal = bulkFolderSelect.value || DEFAULT_FOLDER;
 
       // Dropdown Lật thẻ & Danh sách
-      const allFolderLabel = t(`📁 Tất cả thư mục (${cards.length})`, `📁 全部文件夹 (${cards.length})`);
+      const allFolderLabel = t(`📁 Tất cả bộ thẻ (${cards.length})`, `📁 全部牌组 (${cards.length})`);
       const filterOptionsHtml = `<option value="all">${allFolderLabel}</option>` +
         folders.map(f => `<option value="${f}">📁 ${f} (${folderCounts[f] || 0})</option>`).join('');
       studyFolderSelect.innerHTML = filterOptionsHtml;
@@ -1412,20 +1673,21 @@
       if (folders.includes(prevBulkVal)) bulkFolderSelect.value = prevBulkVal;
 
       renderQuizFolderChips(folders, folderCounts);
+      renderDecksOverview();
     }
 
     function renderQuizFolderChips(folders, folderCounts) {
       if (!quizFolderChips) return;
       const isAll = selectedQuizFolders.has('all') || selectedQuizFolders.size === 0;
       let html = `
-        <button type="button" data-qfolder="all" class="qfolder-chip px-3 py-1 rounded-full text-xs font-semibold border transition ${isAll ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'}">
+        <button type="button" data-qfolder="all" class="qfolder-chip px-3 py-1 rounded-full text-xs font-semibold border transition ${isAll ? 'bg-[#0071E3] text-white border-[#0071E3] shadow-sm' : 'bg-white text-[#1D1D1F] border-black/[0.08] hover:bg-black/[0.04]'}">
           ${t(`Tất cả (${cards.length})`, `全部 (${cards.length})`)}
         </button>
       `;
       folders.forEach(f => {
         const active = !isAll && selectedQuizFolders.has(f);
         html += `
-          <button type="button" data-qfolder="${f}" class="qfolder-chip px-3 py-1 rounded-full text-xs font-semibold border transition ${active ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'}">
+          <button type="button" data-qfolder="${f}" class="qfolder-chip px-3 py-1 rounded-full text-xs font-semibold border transition ${active ? 'bg-[#FF9500] text-white border-[#FF9500] shadow-sm' : 'bg-white text-[#1D1D1F] border-black/[0.08] hover:bg-black/[0.04]'}">
             📁 ${f} (${folderCounts[f] || 0})
           </button>
         `;
@@ -1463,6 +1725,48 @@
       if (created) {
         currentIndex = 0;
         applyFilter();
+      }
+    });
+
+    document.getElementById('btnEditFolderQuick').addEventListener('click', () => {
+      const curFolder = studyFolderSelect.value;
+      if (curFolder && curFolder !== 'all') {
+        renameFolderDeckInteractive(curFolder);
+      } else {
+        switchTab(btnListMode, viewList);
+        refreshAllFolderSelectors();
+        renderList();
+      }
+    });
+
+    document.getElementById('btnCreateDeckInList').addEventListener('click', () => {
+      const created = createNewFolderInteractive(listFolderSelect);
+      if (created) {
+        renderList();
+      }
+    });
+
+    decksOverviewGrid.addEventListener('click', (e) => {
+      const actionBtn = e.target.closest('[data-deck-action]');
+      if (actionBtn) {
+        e.stopPropagation();
+        const action = actionBtn.getAttribute('data-deck-action');
+        const deckName = actionBtn.getAttribute('data-deck-name');
+        if (action === 'rename') {
+          renameFolderDeckInteractive(deckName);
+        } else if (action === 'delete') {
+          deleteFolderDeckInteractive(deckName);
+        } else if (action === 'add-card') {
+          openAddCardModal(deckName);
+        }
+        return;
+      }
+      const deckCard = e.target.closest('[data-deck-card]');
+      if (deckCard) {
+        const deckName = deckCard.getAttribute('data-deck-card');
+        listFolderSelect.value = (listFolderSelect.value === deckName) ? 'all' : deckName;
+        renderDecksOverview();
+        renderList();
       }
     });
 
@@ -1557,7 +1861,6 @@
           if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
             lastErrorMsg = errData?.error?.message || `HTTP ${response.status}`;
-            // Nếu sai API Key (401) hoặc hết credit (402) thì dừng ngay để báo cho người dùng
             if (response.status === 401 || response.status === 402) {
               throw new Error(`OpenRouter (${response.status}): ${lastErrorMsg}`);
             }
@@ -1586,7 +1889,10 @@
       const { openRouterKey, openRouterModel } = getConfig();
 
       if (!openRouterKey) {
-        throw new Error("Bạn chưa nhập OpenRouter API Key! Hãy bấm vào nút ⚙️ ở trên cùng để dán OpenRouter API Key (sk-or-v1-...) trước khi phân tích bằng AI.");
+        throw new Error(t(
+          "Bạn chưa nhập OpenRouter API Key! Hãy bấm vào nút ⚙️ ở trên cùng để dán OpenRouter API Key (sk-or-v1-...) trước khi phân tích bằng AI.",
+          "尚未配置 OpenRouter API Key！请点击顶部设置按钮输入密钥。"
+        ));
       }
 
       const prompt = `Hãy phân tích danh sách ${sentences.length} câu tiếng Trung dưới đây cho người Việt học tiếng Trung.
@@ -1622,7 +1928,7 @@ ${JSON.stringify(sentences)}`;
     }
 
     // =========================================================================
-    // GIAO DIỆN & TƯƠNG TÁC FLASHCARD + TỰ ĐỘNG ĐỌC MẶT TIẾNG TRUNG
+    // GIAO DIỆN & TƯƠNG TÁC FLASHCARD (APPLE DESIGN) + TỰ ĐỘNG ĐỌC
     // =========================================================================
     const cardContainer = document.getElementById('cardContainer');
     const cardInner = document.getElementById('cardInner');
@@ -1654,23 +1960,23 @@ ${JSON.stringify(sentences)}`;
 
     function updateDirectionButtonUI() {
       if (cardDirection === 'vi_to_zh') {
-        btnToggleDirection.className = "text-xs px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 font-semibold transition flex items-center gap-1";
+        btnToggleDirection.className = "text-xs px-3 py-1.5 rounded-full bg-[#FF9500]/15 text-[#C93400] border border-[#FF9500]/30 font-semibold apple-btn flex items-center gap-1";
         directionLabel.textContent = "🇻🇳 ➔ 🇨🇳";
       } else {
-        btnToggleDirection.className = "text-xs px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold transition flex items-center gap-1";
+        btnToggleDirection.className = "text-xs px-3 py-1.5 rounded-full bg-[#34C759]/12 text-[#1D8338] border border-[#34C759]/25 font-semibold apple-btn flex items-center gap-1";
         directionLabel.textContent = "🇨🇳 ➔ 🇻🇳";
       }
     }
 
     function applyPinyinBlurStyle() {
       if (blurPinyin) {
-        btnToggleBlurPinyin.className = "text-xs px-2.5 py-1.5 rounded-lg bg-purple-50 text-purple-700 border border-purple-200 font-semibold transition flex items-center gap-1";
+        btnToggleBlurPinyin.className = "text-xs px-3 py-1.5 rounded-full bg-[#5856D6]/12 text-[#5856D6] border border-[#5856D6]/25 font-semibold apple-btn flex items-center gap-1";
         blurPinyinIcon.className = "fa-solid fa-eye-slash";
         blurPinyinLabel.textContent = t("Pinyin: Mờ", "拼音: 模糊");
         cardPinyin.classList.add('blur-sm', 'opacity-50', 'hover:blur-none', 'hover:opacity-100');
         cardBackPinyin.classList.add('blur-sm', 'opacity-50', 'hover:blur-none', 'hover:opacity-100');
       } else {
-        btnToggleBlurPinyin.className = "text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 border border-slate-200 font-semibold transition flex items-center gap-1";
+        btnToggleBlurPinyin.className = "text-xs px-3 py-1.5 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-semibold apple-btn flex items-center gap-1";
         blurPinyinIcon.className = "fa-solid fa-eye";
         blurPinyinLabel.textContent = t("Pinyin: Rõ", "拼音: 清晰");
         cardPinyin.classList.remove('blur-sm', 'opacity-50', 'hover:blur-none', 'hover:opacity-100');
@@ -1696,10 +2002,10 @@ ${JSON.stringify(sentences)}`;
 
     function updateAutoSpeakButtonUI() {
       if (autoSpeakFront) {
-        btnToggleAutoSpeak.className = "text-xs px-2.5 py-1.5 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-200 font-semibold transition flex items-center gap-1";
+        btnToggleAutoSpeak.className = "text-xs px-3 py-1.5 rounded-full bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/20 font-semibold apple-btn flex items-center gap-1";
         autoSpeakLabel.textContent = t("Tự đọc: BẬT", "自动朗读: 开");
       } else {
-        btnToggleAutoSpeak.className = "text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-500 border border-slate-200 font-medium transition flex items-center gap-1";
+        btnToggleAutoSpeak.className = "text-xs px-3 py-1.5 rounded-full bg-black/[0.04] text-[#86868B] border border-black/[0.06] font-medium apple-btn flex items-center gap-1";
         autoSpeakLabel.textContent = t("Tự đọc: TẮT", "自动朗读: 关");
       }
     }
@@ -1763,12 +2069,12 @@ ${JSON.stringify(sentences)}`;
       if (currentFilteredCards.length === 0) {
         cardHanzi.textContent = t("Chưa có thẻ nào ở mục này", "此分类暂无卡片");
         cardPinyin.textContent = "";
-        cardMeaning.textContent = t("Hãy thêm câu mới hoặc đổi bộ lọc / thư mục", "请添加新句子或切换筛选条件/文件夹");
+        cardMeaning.textContent = t("Hãy thêm câu mới hoặc đổi bộ lọc / bộ thẻ", "请添加新句子或切换筛选条件/牌组");
         cardBackPinyin.textContent = "";
         cardBackPinyin.classList.add('hidden');
         cardGrammar.innerHTML = "";
         cardProgressText.textContent = "0 / 0";
-        cardFolderBadge.innerHTML = `<i class="fa-solid fa-folder text-amber-400 mr-1"></i>${t("Trống", "空")}`;
+        cardFolderBadge.innerHTML = `<i class="fa-solid fa-folder text-[#FF9500] mr-1"></i>${t("Trống", "空")}`;
         srsNextReviewBadge.textContent = "";
         return;
       }
@@ -1782,32 +2088,32 @@ ${JSON.stringify(sentences)}`;
       if (cardDirection === 'vi_to_zh') {
         // Mặt Trước: Tiếng Việt | Mặt Sau: Chữ Hán + Pinyin + Ngữ pháp
         cardFrontSideBadge.textContent = t("Mặt Trước (Tiếng Việt)", "正面 (越南语)");
-        cardFrontSideBadge.className = "text-xs font-semibold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full";
+        cardFrontSideBadge.className = "text-[11px] font-semibold uppercase tracking-wider text-[#1D8338] bg-[#34C759]/12 px-3 py-1 rounded-full";
         cardHanzi.textContent = card.vi;
-        cardHanzi.className = "text-xl sm:text-2xl font-bold text-slate-800 leading-snug";
+        cardHanzi.className = "text-xl sm:text-2xl font-bold text-[#1D1D1F] leading-snug";
         cardPinyin.textContent = "";
         cardPinyin.classList.add('hidden');
-        cardFrontHintText.innerHTML = `<i class="fa-solid fa-hand-pointer mr-1"></i> ${t("Bấm để lật xem Chữ Hán, Pinyin & Ngữ pháp", "点击翻转查看汉字、拼音与语法")}`;
+        cardFrontHintText.innerHTML = `<i class="fa-solid fa-hand-pointer mr-1 text-[#0071E3]"></i> ${t("Bấm để lật xem Chữ Hán, Pinyin & Ngữ pháp", "点击翻转查看汉字、拼音与语法")}`;
 
         cardBackSideBadge.textContent = t("Mặt Sau (Tiếng Trung & Pinyin)", "背面 (中文与拼音)");
         cardMeaning.textContent = card.hz;
-        cardMeaning.className = "text-2xl sm:text-3xl font-bold text-emerald-300 tracking-wide";
+        cardMeaning.className = "text-2xl sm:text-3xl font-bold text-[#30D158] tracking-wide";
         cardBackPinyin.textContent = card.py || "";
         cardBackPinyin.classList.remove('hidden');
         cardGrammar.innerHTML = grammarHtml;
       } else {
         // Mặc định: Mặt Trước: Tiếng Trung + Pinyin | Mặt Sau: Tiếng Việt + Ngữ pháp
         cardFrontSideBadge.textContent = t("Mặt Trước (Tiếng Trung)", "正面 (中文)");
-        cardFrontSideBadge.className = "text-xs font-semibold uppercase tracking-wider text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full";
+        cardFrontSideBadge.className = "text-[11px] font-semibold uppercase tracking-wider text-[#0071E3] bg-[#0071E3]/10 px-3 py-1 rounded-full";
         cardHanzi.textContent = card.hz;
-        cardHanzi.className = "text-2xl sm:text-3xl font-bold text-slate-800 leading-snug tracking-wide";
+        cardHanzi.className = "text-2xl sm:text-4xl font-bold text-[#1D1D1F] leading-snug tracking-tight";
         cardPinyin.textContent = card.py || "";
         cardPinyin.classList.remove('hidden');
-        cardFrontHintText.innerHTML = `<i class="fa-solid fa-hand-pointer mr-1"></i> ${t("Bấm để lật xem nghĩa & cấu trúc ngữ pháp", "点击翻转查看释义与语法结构")}`;
+        cardFrontHintText.innerHTML = `<i class="fa-solid fa-hand-pointer mr-1 text-[#0071E3]"></i> ${t("Bấm để lật xem nghĩa & cấu trúc ngữ pháp", "点击翻转查看释义与语法结构")}`;
 
         cardBackSideBadge.textContent = t("Mặt Sau (Nghĩa & Giải thích)", "背面 (释义与解析)");
         cardMeaning.textContent = card.vi;
-        cardMeaning.className = "text-xl sm:text-2xl font-bold text-emerald-300";
+        cardMeaning.className = "text-xl sm:text-2xl font-bold text-[#30D158]";
         cardBackPinyin.textContent = "";
         cardBackPinyin.classList.add('hidden');
         cardGrammar.innerHTML = grammarHtml;
@@ -1815,23 +2121,23 @@ ${JSON.stringify(sentences)}`;
 
       applyPinyinBlurStyle();
 
-      cardFolderBadge.innerHTML = `<i class="fa-solid fa-folder text-amber-500 mr-1"></i>${card.folder || DEFAULT_FOLDER}`;
+      cardFolderBadge.innerHTML = `<i class="fa-solid fa-folder text-[#FF9500] mr-1"></i>${card.folder || DEFAULT_FOLDER}`;
       srsNextReviewBadge.textContent = formatNextReviewText(card);
 
       cardProgressText.textContent = `${currentIndex + 1} / ${currentFilteredCards.length}`;
 
       if (card.status === 'mastered') {
         levelBadge.textContent = t("Đã thuộc", "已掌握");
-        levelBadge.className = "text-xs px-2 py-0.5 rounded font-medium bg-emerald-100 text-emerald-700";
+        levelBadge.className = "text-xs px-2.5 py-1 rounded-full font-semibold bg-[#34C759]/12 text-[#1D8338]";
       } else if (card.status === 'hard') {
         levelBadge.textContent = t("Chưa nhớ", "未记住");
-        levelBadge.className = "text-xs px-2 py-0.5 rounded font-medium bg-rose-100 text-rose-700";
+        levelBadge.className = "text-xs px-2.5 py-1 rounded-full font-semibold bg-[#FF3B30]/12 text-[#FF3B30]";
       } else if (card.status === 'learning') {
         levelBadge.textContent = t("Đang ôn", "学习中");
-        levelBadge.className = "text-xs px-2 py-0.5 rounded font-medium bg-amber-100 text-amber-700";
+        levelBadge.className = "text-xs px-2.5 py-1 rounded-full font-semibold bg-[#FF9500]/15 text-[#C93400]";
       } else {
         levelBadge.textContent = t("Mới học", "新卡片");
-        levelBadge.className = "text-xs px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-600";
+        levelBadge.className = "text-xs px-2.5 py-1 rounded-full font-semibold bg-black/[0.05] text-[#1D1D1F]";
       }
 
       // Cập nhật gợi ý số ngày ôn tiếp theo trên nút Bình thường / Đã nhớ
@@ -1859,9 +2165,6 @@ ${JSON.stringify(sentences)}`;
       cardInner.classList.toggle('rotate-y-180', isFlipped);
       if (!currentFilteredCards[currentIndex]) return;
 
-      // Tự động phát âm khi lật tới mặt có chữ Tiếng Trung:
-      // - Chiều Trung -> Việt: mặt Tiếng Trung là Mặt Trước (!isFlipped)
-      // - Chiều Việt -> Trung: mặt Tiếng Trung là Mặt Sau (isFlipped)
       const isNowOnChineseSide = (cardDirection === 'zh_to_vi' && !isFlipped) || (cardDirection === 'vi_to_zh' && isFlipped);
       if (autoSpeakFront && isNowOnChineseSide) {
         speakChinese(currentFilteredCards[currentIndex].hz, 0.85);
@@ -1919,7 +2222,7 @@ ${JSON.stringify(sentences)}`;
     document.getElementById('btnStudySrsNow').addEventListener('click', () => {
       const dueCount = cards.filter(isCardDueForSRS).length;
       if (dueCount === 0) {
-        alert("Tuyệt vời! Hiện tại bạn chưa có câu nào quá hạn hoặc cần ôn gấp. Hệ thống sẽ hiển thị tất cả các câu.");
+        alert(t("Tuyệt vời! Hiện tại bạn chưa có câu nào quá hạn hoặc cần ôn gấp. Hệ thống sẽ hiển thị tất cả các câu.", "太棒了！目前没有到期或急需复习的句子，将显示全部卡片。"));
         filterSelect.value = 'all';
       } else {
         studyFolderSelect.value = 'all';
@@ -1935,7 +2238,7 @@ ${JSON.stringify(sentences)}`;
       initDailyQuiz();
     });
 
-    // Tab switcher
+    // Tab switcher (Apple Segmented Control)
     const viewFlashcards = document.getElementById('viewFlashcards');
     const viewQuiz = document.getElementById('viewQuiz');
     const viewList = document.getElementById('viewList');
@@ -1945,9 +2248,9 @@ ${JSON.stringify(sentences)}`;
 
     function switchTab(activeBtn, activeView) {
       [btnStudyMode, btnQuizMode, btnListMode].forEach(b => {
-        b.className = "px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold text-sm hover:bg-indigo-400 transition";
+        b.className = "px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn";
       });
-      activeBtn.className = "px-3 py-1.5 rounded-lg bg-white text-indigo-600 font-semibold text-sm shadow hover:bg-indigo-50 transition";
+      activeBtn.className = "px-3.5 py-1.5 rounded-full bg-white text-[#1D1D1F] font-semibold text-xs sm:text-sm shadow-sm apple-btn";
 
       viewFlashcards.classList.add('hidden');
       viewQuiz.classList.add('hidden');
@@ -1972,26 +2275,69 @@ ${JSON.stringify(sentences)}`;
     });
 
     // =========================================================================
-    // MODAL 1: THÊM 1 CÂU MỚI (CÓ CHỌN/TẠO THƯ MỤC + TỰ ĐỘNG ĐIỀN AI)
+    // MODAL 1: THÊM MỚI HOẶC CHỈNH SỬA THẺ ĐÃ CÓ (CÓ CHỌN/TẠO BỘ THẺ + AI)
     // =========================================================================
     const modalAddCard = document.getElementById('modalAddCard');
+    const modalCardHeaderIcon = document.getElementById('modalCardHeaderIcon');
     const inputHz = document.getElementById('inputHz');
     const inputPy = document.getElementById('inputPy');
     const inputVi = document.getElementById('inputVi');
     const inputGrammar = document.getElementById('inputGrammar');
     const btnAutoFillSingle = document.getElementById('btnAutoFillSingle');
+    let editingCardId = null; // null = Thêm câu mới, khác null = Sửa thẻ đã có
 
-    document.getElementById('btnOpenAddModal').addEventListener('click', () => {
+    function openAddCardModal(preferredFolder) {
+      editingCardId = null;
       refreshAllFolderSelectors();
-      if (studyFolderSelect.value && studyFolderSelect.value !== 'all') {
+      if (preferredFolder && preferredFolder !== 'all') {
+        inputCardFolderSelect.value = preferredFolder;
+      } else if (studyFolderSelect.value && studyFolderSelect.value !== 'all') {
         inputCardFolderSelect.value = studyFolderSelect.value;
       }
+      if (modalCardHeaderIcon) modalCardHeaderIcon.className = "fa-solid fa-plus-circle text-[#0071E3]";
+      document.getElementById('i18nModalAddTitle').textContent = t('Thêm câu học mới', '添加新句子');
+      document.getElementById('btnSaveCard').textContent = t('Lưu thẻ mới', '保存新卡');
+      inputHz.value = '';
+      inputPy.value = '';
+      inputVi.value = '';
+      inputGrammar.value = '';
       modalAddCard.classList.remove('hidden');
       inputHz.focus();
+    }
+
+    function openEditCardModal(cardId) {
+      const card = cards.find(c => Number(c.id) === Number(cardId));
+      if (!card) return;
+      editingCardId = card.id;
+      refreshAllFolderSelectors();
+      inputCardFolderSelect.value = card.folder || DEFAULT_FOLDER;
+      inputHz.value = card.hz || '';
+      inputPy.value = card.py || '';
+      inputVi.value = card.vi || '';
+      inputGrammar.value = card.grammar || '';
+      if (modalCardHeaderIcon) modalCardHeaderIcon.className = "fa-solid fa-pen-to-square text-[#0071E3]";
+      document.getElementById('i18nModalAddTitle').textContent = t('Chỉnh sửa thẻ câu', '编辑句子卡片');
+      document.getElementById('btnSaveCard').textContent = t('Lưu thay đổi', '保存修改');
+      modalAddCard.classList.remove('hidden');
+      inputHz.focus();
+    }
+
+    document.getElementById('btnOpenAddModal').addEventListener('click', () => {
+      openAddCardModal();
+    });
+
+    document.getElementById('btnEditCurrentCard').addEventListener('click', () => {
+      const cur = currentFilteredCards[currentIndex];
+      if (!cur) {
+        alert(t("Hiện không có thẻ nào để chỉnh sửa!", "当前没有可编辑的卡片！"));
+        return;
+      }
+      openEditCardModal(cur.id);
     });
 
     function closeModal() {
       modalAddCard.classList.add('hidden');
+      editingCardId = null;
       inputHz.value = '';
       inputPy.value = '';
       inputVi.value = '';
@@ -2009,13 +2355,13 @@ ${JSON.stringify(sentences)}`;
     btnAutoFillSingle.addEventListener('click', async () => {
       const hz = inputHz.value.trim();
       if (!hz) {
-        alert("Vui lòng nhập câu chữ Hán trước!");
+        alert(t("Vui lòng nhập câu chữ Hán trước!", "请先输入汉字句子！"));
         inputHz.focus();
         return;
       }
       const origHtml = btnAutoFillSingle.innerHTML;
       btnAutoFillSingle.disabled = true;
-      btnAutoFillSingle.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích...`;
+      btnAutoFillSingle.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('Đang phân tích...', 'AI解析中...')}`;
       try {
         const [analyzed] = await analyzeChineseSentencesWithAI([hz]);
         if (analyzed) {
@@ -2024,7 +2370,7 @@ ${JSON.stringify(sentences)}`;
           inputGrammar.value = analyzed.grammar || '';
         }
       } catch (err) {
-        alert("Lỗi khi phân tích câu: " + err.message);
+        alert(t("Lỗi khi phân tích câu: ", "解析句子出错: ") + err.message);
       } finally {
         btnAutoFillSingle.disabled = false;
         btnAutoFillSingle.innerHTML = origHtml;
@@ -2039,7 +2385,7 @@ ${JSON.stringify(sentences)}`;
       const folder = inputCardFolderSelect.value || DEFAULT_FOLDER;
 
       if (!hz) {
-        alert("Vui lòng nhập câu Chữ Hán!");
+        alert(t("Vui lòng nhập câu Chữ Hán!", "请输入汉字句子！"));
         return;
       }
 
@@ -2047,7 +2393,7 @@ ${JSON.stringify(sentences)}`;
       const origText = btnSave.textContent;
       if (!vi || !py) {
         btnSave.disabled = true;
-        btnSave.textContent = "Đang tự điền nghĩa...";
+        btnSave.textContent = t("Đang tự điền nghĩa...", "正在自动生成释义...");
         try {
           const [analyzed] = await analyzeChineseSentencesWithAI([hz]);
           if (analyzed) {
@@ -2064,12 +2410,35 @@ ${JSON.stringify(sentences)}`;
         }
       }
 
+      const formattedGrammar = grammar ? (grammar.startsWith('•') ? grammar : `• ${grammar}`) : "• Từ mới tự bổ sung";
+
+      // Nếu đang ở chế độ Sửa thẻ đã có
+      if (editingCardId !== null) {
+        const targetCard = cards.find(c => Number(c.id) === Number(editingCardId));
+        if (targetCard) {
+          targetCard.hz = hz;
+          targetCard.py = py;
+          targetCard.vi = vi;
+          targetCard.grammar = formattedGrammar;
+          targetCard.folder = folder;
+          if (!customFolders.includes(folder)) customFolders.push(folder);
+
+          refreshAllFolderSelectors();
+          applyFilter(false);
+          if (!viewList.classList.contains('hidden')) renderList();
+          closeModal();
+          await upsertCardToCloud(targetCard);
+          return;
+        }
+      }
+
+      // Chế độ Thêm thẻ mới
       const newCard = {
         id: Date.now(),
         hz,
         py,
         vi,
-        grammar: grammar ? (grammar.startsWith('•') ? grammar : `• ${grammar}`) : "• Từ mới tự bổ sung",
+        grammar: formattedGrammar,
         folder,
         status: 'new',
         reviews: 0,
@@ -2091,7 +2460,7 @@ ${JSON.stringify(sentences)}`;
     });
 
     // =========================================================================
-    // MODAL 2: IMPORT HÀNG LOẠT CHỈ CẦN CHỮ HÁN (CÓ CHỌN/TẠO THƯ MỤC)
+    // MODAL 2: IMPORT HÀNG LOẠT + CHO PHÉP CHỈNH SỬA TRỰC TIẾP TRƯỚC KHI LƯU
     // =========================================================================
     const modalBulkImport = document.getElementById('modalBulkImport');
     const bulkInputHz = document.getElementById('bulkInputHz');
@@ -2123,6 +2492,58 @@ ${JSON.stringify(sentences)}`;
     document.getElementById('btnCloseBulkModal').addEventListener('click', closeBulkModal);
     document.getElementById('btnCancelBulk').addEventListener('click', closeBulkModal);
 
+    function renderBulkPreviewEditableList() {
+      const selectedFolder = bulkFolderSelect.value || DEFAULT_FOLDER;
+      bulkPreviewCount.textContent = generatedBulkCards.length;
+      btnSaveBulk.disabled = generatedBulkCards.length === 0;
+      if (generatedBulkCards.length === 0) {
+        bulkPreviewContainer.classList.add('hidden');
+        return;
+      }
+      bulkPreviewContainer.classList.remove('hidden');
+      bulkPreviewList.innerHTML = generatedBulkCards.map((c, i) => `
+        <div class="p-3.5 text-xs space-y-2 bg-white">
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-bold text-[#86868B]">#${i + 1}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-[11px] bg-[#FF9500]/12 text-[#C93400] px-2.5 py-0.5 rounded-full font-semibold">📁 ${selectedFolder}</span>
+              <button type="button" data-bulk-remove="${i}" class="text-[#86868B] hover:text-[#FF3B30] px-1.5 py-0.5 rounded" title="${t('Xóa câu này khỏi danh sách import', '从导入列表中移除此句')}">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input type="text" data-bulk-idx="${i}" data-bulk-field="hz" value="${(c.hz || '').replace(/"/g, '&quot;')}"
+              placeholder="Chữ Hán / 汉字" class="apple-input rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#1D1D1F]">
+            <input type="text" data-bulk-idx="${i}" data-bulk-field="py" value="${(c.py || '').replace(/"/g, '&quot;')}"
+              placeholder="Pinyin / 拼音" class="apple-input rounded-xl px-2.5 py-1.5 text-xs text-[#0071E3] font-medium">
+          </div>
+          <input type="text" data-bulk-idx="${i}" data-bulk-field="vi" value="${(c.vi || '').replace(/"/g, '&quot;')}"
+            placeholder="Nghĩa tiếng Việt / 越南语释义" class="w-full apple-input rounded-xl px-2.5 py-1.5 text-xs font-semibold text-[#1D8338]">
+          <input type="text" data-bulk-idx="${i}" data-bulk-field="grammar" value="${(c.grammar || '').replace(/"/g, '&quot;')}"
+            placeholder="Giải thích từ vựng & ngữ pháp / 词汇与语法解析" class="w-full apple-input rounded-xl px-2.5 py-1.5 text-xs text-[#86868B]">
+        </div>
+      `).join('');
+    }
+
+    bulkPreviewList.addEventListener('input', (e) => {
+      const inputEl = e.target.closest('[data-bulk-idx]');
+      if (!inputEl) return;
+      const idx = Number(inputEl.getAttribute('data-bulk-idx'));
+      const field = inputEl.getAttribute('data-bulk-field');
+      if (generatedBulkCards[idx] && field) {
+        generatedBulkCards[idx][field] = inputEl.value;
+      }
+    });
+
+    bulkPreviewList.addEventListener('click', (e) => {
+      const rmBtn = e.target.closest('[data-bulk-remove]');
+      if (!rmBtn) return;
+      const idx = Number(rmBtn.getAttribute('data-bulk-remove'));
+      generatedBulkCards.splice(idx, 1);
+      renderBulkPreviewEditableList();
+    });
+
     btnAnalyzeBulk.addEventListener('click', async () => {
       const lines = bulkInputHz.value
         .split('\n')
@@ -2130,14 +2551,14 @@ ${JSON.stringify(sentences)}`;
         .filter(line => line.length > 0);
 
       if (lines.length === 0) {
-        alert("Vui lòng nhập ít nhất 1 câu tiếng Trung!");
+        alert(t("Vui lòng nhập ít nhất 1 câu tiếng Trung!", "请至少输入 1 个中文句子！"));
         return;
       }
 
       btnAnalyzeBulk.disabled = true;
       const origHtml = btnAnalyzeBulk.innerHTML;
-      btnAnalyzeBulk.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích ${lines.length} câu...`;
-      bulkStatusText.textContent = "Đang tạo Pinyin, dịch nghĩa tiếng Việt và phân tích ngữ pháp...";
+      btnAnalyzeBulk.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t(`Đang phân tích ${lines.length} câu...`, `正在解析 ${lines.length} 个句子...`)}`;
+      bulkStatusText.textContent = t("Đang tạo Pinyin, dịch nghĩa tiếng Việt và phân tích ngữ pháp...", "正在生成拼音、越南语释义与语法解析...");
 
       try {
         const analyzedList = await analyzeChineseSentencesWithAI(lines);
@@ -2158,28 +2579,14 @@ ${JSON.stringify(sentences)}`;
           lastReviewed: 0
         }));
 
-        bulkPreviewCount.textContent = generatedBulkCards.length;
-        bulkPreviewList.innerHTML = generatedBulkCards.map((c, i) => `
-          <div class="p-3 text-xs space-y-1 bg-white">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <span class="font-bold text-slate-400">#${i + 1}</span>
-                <span class="font-bold text-sm text-slate-800">${c.hz}</span>
-                <span class="font-mono text-indigo-600">${c.py}</span>
-              </div>
-              <span class="text-[11px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">📁 ${selectedFolder}</span>
-            </div>
-            <div class="text-emerald-700 font-semibold">${c.vi}</div>
-            <div class="text-slate-500">${c.grammar}</div>
-          </div>
-        `).join('');
-
-        bulkPreviewContainer.classList.remove('hidden');
-        btnSaveBulk.disabled = false;
-        bulkStatusText.textContent = `Đã phân tích xong ${generatedBulkCards.length} câu! Hãy kiểm tra và bấm "Lưu tất cả vào bộ thẻ".`;
+        renderBulkPreviewEditableList();
+        bulkStatusText.textContent = t(
+          `Đã phân tích xong ${generatedBulkCards.length} câu! Bạn có thể sửa trực tiếp các ô bên dưới trước khi bấm Lưu.`,
+          `已解析 ${generatedBulkCards.length} 个句子！您可直接在下方修改后点击保存。`
+        );
       } catch (err) {
-        alert("Lỗi khi phân tích: " + err.message);
-        bulkStatusText.textContent = "Có lỗi xảy ra: " + err.message;
+        alert(t("Lỗi khi phân tích: ", "解析出错: ") + err.message);
+        bulkStatusText.textContent = t("Có lỗi xảy ra: ", "发生错误: ") + err.message;
       } finally {
         btnAnalyzeBulk.disabled = false;
         btnAnalyzeBulk.innerHTML = origHtml;
@@ -2192,7 +2599,7 @@ ${JSON.stringify(sentences)}`;
       generatedBulkCards.forEach(c => { c.folder = targetFolder; });
 
       btnSaveBulk.disabled = true;
-      btnSaveBulk.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Đang lưu...`;
+      btnSaveBulk.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> ${t('Đang lưu...', '保存中...')}`;
 
       cards = [...generatedBulkCards, ...cards];
       refreshAllFolderSelectors();
@@ -2203,10 +2610,10 @@ ${JSON.stringify(sentences)}`;
       await upsertMultipleCardsToCloud(generatedBulkCards);
 
       const count = generatedBulkCards.length;
-      btnSaveBulk.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1"></i> Lưu tất cả vào bộ thẻ`;
+      btnSaveBulk.innerHTML = `<i class="fa-solid fa-cloud-arrow-up mr-1"></i> ${t('Lưu tất cả vào bộ thẻ', '保存全部')}`;
       closeBulkModal();
       switchTab(btnStudyMode, viewFlashcards);
-      alert(`Đã thêm thành công ${count} câu mới vào thư mục "${targetFolder}"!`);
+      alert(t(`Đã thêm thành công ${count} câu mới vào bộ thẻ "${targetFolder}"!`, `已成功将 ${count} 个新句子添加至牌组 "${targetFolder}"！`));
     });
 
     // =========================================================================
@@ -2287,12 +2694,15 @@ ${JSON.stringify(sentences)}`;
     });
 
     // =========================================================================
-    // DANH SÁCH THẺ & LỌC THEO THƯ MỤC / TÌM KIẾM / ĐỔI THƯ MỤC
+    // DANH SÁCH THẺ & LỌC THEO BỘ THẺ / TÌM KIẾM / CHỈNH SỬA THẺ & BỘ THẺ
     // =========================================================================
     const searchListInput = document.getElementById('searchListInput');
     const allCardsTable = document.getElementById('allCardsTable');
     searchListInput.addEventListener('input', renderList);
-    listFolderSelect.addEventListener('change', renderList);
+    listFolderSelect.addEventListener('change', () => {
+      renderDecksOverview();
+      renderList();
+    });
 
     function renderList() {
       const keyword = (searchListInput.value || '').trim().toLowerCase();
@@ -2312,28 +2722,31 @@ ${JSON.stringify(sentences)}`;
         `显示: ${filtered.length} / ${cards.length} 句`
       );
       allCardsTable.innerHTML = filtered.map((c, i) => `
-        <div class="p-4 hover:bg-slate-50 flex items-start justify-between gap-4">
+        <div class="p-4 sm:px-5 hover:bg-black/[0.02] transition flex items-start justify-between gap-4">
           <div class="space-y-1 flex-1 cursor-pointer" data-card-action="select" data-card-id="${c.id}">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-xs font-bold text-slate-400">#${i + 1}</span>
-              <span class="text-base font-bold text-slate-800">${c.hz}</span>
-              <span class="text-xs font-mono text-indigo-600">${c.py || ''}</span>
-              <span class="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80 font-medium">
-                📁 ${c.folder || DEFAULT_FOLDER}
+              <span class="text-xs font-bold text-[#86868B]">#${i + 1}</span>
+              <span class="text-base font-bold text-[#1D1D1F]">${c.hz}</span>
+              <span class="text-xs font-medium text-[#0071E3]">${c.py || ''}</span>
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-medium">
+                <i class="fa-solid fa-folder text-[#FF9500] mr-1"></i>${c.folder || DEFAULT_FOLDER}
               </span>
             </div>
-            <p class="text-sm text-slate-600 font-medium">${c.vi}</p>
-            <p class="text-xs text-slate-400">${c.grammar || ''}</p>
+            <p class="text-sm text-[#1D1D1F]/80 font-medium">${c.vi}</p>
+            <p class="text-xs text-[#86868B]">${c.grammar || ''}</p>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <span class="text-[11px] text-slate-400 hidden sm:inline">${formatNextReviewText(c)}</span>
-            <span class="text-xs px-2 py-1 rounded font-semibold ${c.status === 'mastered' ? 'bg-emerald-100 text-emerald-700' : (c.status === 'hard' ? 'bg-rose-100 text-rose-700' : (c.status === 'learning' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'))}">
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="text-[11px] text-[#86868B] hidden sm:inline mr-1">${formatNextReviewText(c)}</span>
+            <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${c.status === 'mastered' ? 'bg-[#34C759]/12 text-[#1D8338]' : (c.status === 'hard' ? 'bg-[#FF3B30]/12 text-[#FF3B30]' : (c.status === 'learning' ? 'bg-[#FF9500]/15 text-[#C93400]' : 'bg-black/[0.05] text-[#86868B]'))}">
               ${c.status === 'mastered' ? t('Đã thuộc', '已掌握') : (c.status === 'hard' ? t('Cần ôn', '需复习') : (c.status === 'learning' ? t('Đang ôn', '学习中') : t('Mới', '新卡')))}
             </span>
-            <button type="button" data-card-action="move" data-card-id="${c.id}" class="text-slate-400 hover:text-amber-600 p-1 text-sm" title="${t('Chuyển sang thư mục khác', '移动至其他文件夹')}">
-              <i class="fa-solid fa-folder"></i>
+            <button type="button" data-card-action="edit" data-card-id="${c.id}" class="w-8 h-8 rounded-full bg-black/[0.04] hover:bg-[#0071E3] text-[#0071E3] hover:text-white flex items-center justify-center text-xs transition" title="${t('Chỉnh sửa thẻ (Chữ Hán, Pinyin, Nghĩa, Ngữ pháp, Bộ thẻ)', '编辑卡片内容')}">
+              <i class="fa-solid fa-pen"></i>
             </button>
-            <button type="button" data-card-action="delete" data-card-id="${c.id}" class="text-slate-300 hover:text-rose-500 p-1 text-sm" title="${t('Xóa thẻ', '删除卡片')}">
+            <button type="button" data-card-action="move" data-card-id="${c.id}" class="w-8 h-8 rounded-full bg-black/[0.04] hover:bg-[#FF9500] text-[#86868B] hover:text-white flex items-center justify-center text-xs transition" title="${t('Chuyển sang bộ thẻ khác', '移动至其他牌组')}">
+              <i class="fa-solid fa-folder-open"></i>
+            </button>
+            <button type="button" data-card-action="delete" data-card-id="${c.id}" class="w-8 h-8 rounded-full bg-black/[0.04] hover:bg-[#FF3B30] text-[#86868B] hover:text-white flex items-center justify-center text-xs transition" title="${t('Xóa thẻ', '删除卡片')}">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -2343,7 +2756,7 @@ ${JSON.stringify(sentences)}`;
 
     async function moveCardFolderById(id) {
       if (currentUser && currentUser.role !== 'owner') {
-        alert(t("Chỉ tài khoản Chủ sở hữu (Owner) mới có quyền chuyển thư mục của thẻ chung!", "仅所有者 (Owner) 账户有权移动公共卡片的文件夹！"));
+        alert(t("Chỉ tài khoản Chủ sở hữu (Owner) mới có quyền chuyển bộ thẻ của thẻ chung!", "仅所有者 (Owner) 账户有权移动公共卡片的牌组！"));
         return;
       }
       const card = cards.find(c => Number(c.id) === Number(id));
@@ -2351,8 +2764,8 @@ ${JSON.stringify(sentences)}`;
       const allF = getAllFolders();
       const chosen = prompt(
         t(
-          `Nhập tên thư mục muốn chuyển câu "${card.hz}" tới:\n(Các thư mục hiện có: ${allF.join(', ')})`,
-          `输入要将 "${card.hz}" 移动到的文件夹名称:\n(现有文件夹: ${allF.join(', ')})`
+          `Nhập tên bộ thẻ muốn chuyển câu "${card.hz}" tới:\n(Các bộ thẻ hiện có: ${allF.join(', ')})`,
+          `输入要将 "${card.hz}" 移动到的牌组名称:\n(现有牌组: ${allF.join(', ')})`
         ),
         card.folder || DEFAULT_FOLDER
       );
@@ -2394,7 +2807,10 @@ ${JSON.stringify(sentences)}`;
       const action = actionEl.getAttribute('data-card-action');
       const cardId = Number(actionEl.getAttribute('data-card-id'));
       if (!cardId) return;
-      if (action === 'move') {
+      if (action === 'edit') {
+        e.stopPropagation();
+        openEditCardModal(cardId);
+      } else if (action === 'move') {
         e.stopPropagation();
         moveCardFolderById(cardId);
       } else if (action === 'delete') {
@@ -2525,11 +2941,11 @@ ${JSON.stringify(sentences)}`;
         selectedQuizMode = btn.getAttribute('data-quiz-mode');
         quizModeBtns.forEach(b => {
           b.className = b.getAttribute('data-quiz-mode') === 'mixed'
-            ? "quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center"
-            : "quiz-mode-btn py-2 px-2 rounded-lg text-slate-600 hover:bg-white/60 transition text-center";
+            ? "quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-xl text-[#86868B] hover:text-[#1D1D1F] transition text-center"
+            : "quiz-mode-btn py-2 px-2 rounded-xl text-[#86868B] hover:text-[#1D1D1F] transition text-center";
         });
         btn.className = (selectedQuizMode === 'mixed' ? "quiz-mode-btn col-span-2 sm:col-span-1 " : "quiz-mode-btn ") +
-          "py-2 px-2 rounded-lg bg-white text-indigo-600 shadow-sm transition text-center";
+          "py-2 px-2 rounded-xl bg-white text-[#1D1D1F] shadow-sm transition text-center";
         initDailyQuiz();
       });
     });
@@ -3011,13 +3427,13 @@ Chỉ trả về JSON hợp lệ (không giải thích ngoài JSON):
       authMode = mode;
       showAuthError('');
       if (mode === 'register') {
-        tabBtnRegister.className = "py-2 rounded-lg bg-white text-indigo-600 shadow-sm transition";
-        tabBtnLogin.className = "py-2 rounded-lg text-slate-600 hover:bg-white/60 transition";
+        tabBtnRegister.className = "py-2 rounded-full bg-white text-[#1D1D1F] shadow-sm transition";
+        tabBtnLogin.className = "py-2 rounded-full text-[#86868B] hover:text-[#1D1D1F] transition";
         authConfirmPwdBox.classList.remove('hidden');
         btnSubmitAuth.innerHTML = `<i class="fa-solid fa-user-plus"></i> <span id="i18nBtnSubmitAuth">${!hasAnyUserInDb ? t('Tạo Tài khoản Chủ sở hữu & Vào học', '创建所有者账户并开始学习') : t('Đăng ký Tài khoản mới', '注册新账户')}</span>`;
       } else {
-        tabBtnLogin.className = "py-2 rounded-lg bg-white text-indigo-600 shadow-sm transition";
-        tabBtnRegister.className = "py-2 rounded-lg text-slate-600 hover:bg-white/60 transition";
+        tabBtnLogin.className = "py-2 rounded-full bg-white text-[#1D1D1F] shadow-sm transition";
+        tabBtnRegister.className = "py-2 rounded-full text-[#86868B] hover:text-[#1D1D1F] transition";
         authConfirmPwdBox.classList.add('hidden');
         btnSubmitAuth.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> <span id="i18nBtnSubmitAuth">${t('Đăng nhập vào học', '登录学习')}</span>`;
       }
@@ -3505,9 +3921,9 @@ Chỉ trả về JSON hợp lệ (không giải thích ngoài JSON):
         const isActive = code === uiLang;
         const inAuth = Boolean(btn.closest('#authScreen'));
         if (inAuth) {
-          btn.className = `lang-switch-btn px-2 py-1 rounded-md transition ${isActive ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/70'}`;
+          btn.className = `lang-switch-btn px-3 py-1 rounded-full transition font-semibold ${isActive ? 'bg-white text-[#1D1D1F] shadow-sm' : 'text-[#86868B] hover:text-[#1D1D1F]'}`;
         } else {
-          btn.className = `lang-switch-btn px-2 py-0.5 rounded-full transition ${isActive ? 'bg-white text-indigo-700 shadow-sm' : 'text-indigo-100 hover:bg-indigo-700'}`;
+          btn.className = `lang-switch-btn px-2.5 py-0.5 rounded-full transition font-semibold ${isActive ? 'bg-white text-[#1D1D1F] shadow-sm' : 'text-[#86868B] hover:text-[#1D1D1F]'}`;
         }
       });
 
@@ -3531,7 +3947,7 @@ Chỉ trả về JSON hợp lệ (không giải thích ngoài JSON):
       setElText('i18nHeaderSubtitle', 'Đồng bộ tiến trình học theo từng User & Tự động tạo Pinyin/Ngữ pháp bằng AI', '按用户同步学习进度 & AI自动生成拼音/语法');
       setElText('i18nNavStudy', 'Lật thẻ', '翻卡');
       setElText('i18nNavQuiz', 'Kiểm tra', '测验');
-      setElText('i18nNavList', 'Danh sách', '列表');
+      setElText('i18nNavList', 'Bộ thẻ', '牌组');
       setElText('i18nNavBulk', 'Import AI', '批量导入');
       setElText('i18nNavAdd', 'Thêm câu', '添加');
       if (currentUser) {
@@ -3545,7 +3961,9 @@ Chỉ trả về JSON hợp lệ (không giải thích ngoài JSON):
       setElText('i18nBtnStudySrsNow', 'Học lại ngay', '立即复习');
       setElText('i18nBtnQuizSrsNow', 'Kiểm tra câu cần ôn', '测验待复习');
       setElText('i18nProgressLabel', 'Tiến độ:', '进度:');
-      setElText('i18nBtnNewFolderQuick', '+ Thư mục', '+ 文件夹');
+      setElText('i18nBtnNewFolderQuick', '+ Bộ thẻ', '+ 新牌组');
+      setElText('i18nBtnEditFolderQuick', 'Sửa bộ thẻ', '编辑牌组');
+      setElText('i18nBtnEditCurrentCard', 'Sửa thẻ', '编辑卡片');
       setElText('i18nFilterAll', 'Tất cả trạng thái', '全部状态');
       setElText('i18nFilterSrsDue', '🔥 Cần ôn hôm nay (SRS)', '🔥 今日待复习 (SRS)');
       setElText('i18nFilterNew', '🌱 Mới chưa học', '🌱 未学新卡');
@@ -3580,27 +3998,34 @@ Chỉ trả về JSON hợp lệ (không giải thích ngoài JSON):
       setElText('i18nBtnRestartQuiz', 'Làm lại lượt kiểm tra mới', '重新开始测验');
       quizTypingInput.placeholder = t('Nhập nghĩa tiếng Việt bạn nghe được (chấp nhận từ đồng nghĩa)...', '输入您听到的越南语意思（支持同义词）...');
 
-      // 5. Màn hình Danh sách & Modal
-      setElText('i18nListHeaderTitle', 'Danh sách toàn bộ thẻ câu', '全部卡片列表');
+      // 5. Màn hình Danh sách Bộ thẻ & Modal
+      setElText('i18nDecksSectionTitle', 'Bộ thẻ của bạn', '您的牌组');
+      setElText('i18nDecksSectionSubtitle', 'Chỉnh sửa tên bộ thẻ, thêm câu mới hoặc lọc thẻ theo từng chủ đề', '重命名牌组、添加新句或按主题筛选卡片');
+      setElText('i18nBtnCreateDeckInList', 'Tạo bộ thẻ mới', '新建牌组');
+      setElText('i18nListHeaderTitle', 'Danh sách chi tiết & Chỉnh sửa thẻ', '卡片明细与编辑');
       setElText('i18nBtnImportJson', 'Nhập JSON', '导入 JSON');
       setElText('i18nBtnExportJson', 'Xuất JSON', '导出 JSON');
       searchListInput.placeholder = t('Tìm chữ Hán, Pinyin, nghĩa...', '搜索汉字、拼音、越南语释义...');
 
-      setElText('i18nModalAddTitle', 'Thêm câu học mới', '添加新句子');
-      setElText('i18nModalAddFolderLabel', 'Thư mục bộ thẻ:', '所属文件夹:');
-      setElText('btnCreateFolderInSingle', '+ Thư mục mới', '+ 新建文件夹');
+      setElText('i18nModalAddTitle', editingCardId !== null ? 'Chỉnh sửa thẻ câu' : 'Thêm câu học mới', editingCardId !== null ? '编辑卡片内容' : '添加新句子');
+      setElText('i18nModalAddFolderLabel', 'Bộ thẻ / Thư mục:', '所属牌组 / 文件夹:');
+      setElText('btnCreateFolderInSingle', '+ Bộ thẻ mới', '+ 新建牌组');
       setElText('i18nModalAddHzLabel', 'Chữ Hán (Chỉ cần nhập mục này):', '汉字（只需输入此项）:');
       setElText('i18nBtnAutoFillSingle', 'Tự động điền AI', 'AI自动填充');
       setElText('i18nModalAddPyLabel', 'Pinyin (Tự động tạo khi gõ chữ Hán):', '拼音（输入汉字时自动生成）:');
       setElText('i18nModalAddViLabel', 'Nghĩa tiếng Việt:', '越南语释义:');
       setElText('i18nModalAddGrammarLabel', 'Giải thích từ vựng / Ngữ pháp:', '词汇与语法解析:');
       setElText('btnCancelAdd', 'Hủy', '取消');
-      setElText('btnSaveCard', 'Lưu thẻ mới', '保存新卡');
+      if (editingCardId === null) {
+        btnSaveCard.innerHTML = `<i class="fa-solid fa-floppy-disk mr-1"></i> ${t('Lưu thẻ mới', '保存新卡')}`;
+      } else {
+        btnSaveCard.innerHTML = `<i class="fa-solid fa-check mr-1"></i> ${t('Lưu chỉnh sửa', '保存修改')}`;
+      }
 
       setElText('i18nModalBulkTitle', 'Import nhanh bằng AI', 'AI批量导入中文句子');
-      setElText('i18nModalBulkSubtitle', 'Mỗi dòng 1 câu tiếng Trung. Hệ thống tự động tạo Pinyin, dịch nghĩa tiếng Việt và phân tích ngữ pháp.', '每行一句中文。系统自动生成拼音、越南语翻译与语法解析。');
-      setElText('i18nModalBulkFolderLabel', 'Lưu các câu này vào thư mục:', '将这些句子保存至文件夹:');
-      setElText('btnCreateFolderInBulk', '+ Thư mục mới', '+ 新建文件夹');
+      setElText('i18nModalBulkSubtitle', 'Mỗi dòng 1 câu tiếng Trung. Hệ thống tự động tạo Pinyin, dịch nghĩa tiếng Việt và phân tích ngữ pháp. Bạn có thể chỉnh sửa trực tiếp trước khi lưu.', '每行一句中文。系统自动生成拼音、越南语翻译与语法解析，保存前可直接修改。');
+      setElText('i18nModalBulkFolderLabel', 'Lưu các câu này vào bộ thẻ:', '将这些句子保存至牌组:');
+      setElText('btnCreateFolderInBulk', '+ Bộ thẻ mới', '+ 新建牌组');
       setElText('i18nModalBulkInputLabel', 'Danh sách câu tiếng Trung (mỗi câu 1 dòng):', '中文句子列表（每行一句）:');
       setElText('i18nBtnAnalyzeBulk', 'Phân tích & Tự điền tất cả', 'AI解析并自动填充全部');
       setElText('btnCancelBulk', 'Đóng', '关闭');
