@@ -332,6 +332,82 @@ ${JSON.stringify(sentences)}`;
   });
 }
 
+// Phân tích và tách đoạn văn bản tiếng Trung phục vụ tính năng Shadowing (Luyện nghe - Đọc đuổi)
+async function analyzeShadowingTextWithAI(rawText, title, requestedHsk = 'auto') {
+  if (!rawText || !rawText.trim()) {
+    throw new Error(t("Vui lòng nhập đoạn văn bản tiếng Trung!", "请输入中文段落文本！"));
+  }
+
+  // Tách thô cục bộ để dự phòng nếu không dùng AI
+  const fallbackSentences = rawText
+    .split(/([。！？\n]+)/)
+    .reduce((acc, cur, idx, arr) => {
+      if (idx % 2 === 0 && cur.trim()) {
+        const punctuation = arr[idx + 1] || '。';
+        acc.push(cur.trim() + (punctuation.trim() || '。'));
+      }
+      return acc;
+    }, [])
+    .filter(s => s.length > 1);
+
+  const { openRouterKey, openRouterModel } = getConfig();
+
+  // Nếu có cấu hình OpenRouter AI, gọi AI để phân tích chuẩn xác ngữ điệu và cấp độ HSK
+  if (openRouterKey) {
+    const prompt = `Bạn là chuyên gia giáo dục tiếng Trung (HSK). Hãy phân tích đoạn văn bản dưới đây để phục vụ bài luyện nghe và nói đuổi (Shadowing) cho người Việt.
+Yêu cầu:
+1. Tách đoạn văn thành các câu ngắn vừa phải (tối ưu cho người học nghe và nhại theo từng câu).
+2. Tự động đánh giá và xác định cấp độ HSK phù hợp nhất cho bài này: một trong các giá trị "HSK1", "HSK2", "HSK3", "HSK4", "HSK5", "HSK6". ${requestedHsk !== 'auto' ? `(Người dùng yêu cầu phân loại: ${requestedHsk})` : ''}
+3. Trả về DUY NHẤT một JSON Object có cấu trúc:
+{
+  "title": "${title || 'Bài đọc tiếng Trung'}",
+  "hskLevel": "${requestedHsk !== 'auto' ? requestedHsk : 'HSK2'}",
+  "sentences": [
+    {
+      "hz": "Câu chữ Hán gốc có dấu chấm câu",
+      "py": "Phiên âm Pinyin chuẩn có dấu thanh điệu (viết hoa đầu câu)",
+      "vi": "Dịch nghĩa tiếng Việt tự nhiên, chính xác"
+    }
+  ]
+}
+
+Đoạn văn bản tiếng Trung:
+"""
+${rawText.trim()}
+"""`;
+
+    try {
+      const aiRes = await callOpenRouterJson(prompt, openRouterKey, openRouterModel);
+      if (aiRes && Array.isArray(aiRes.sentences) && aiRes.sentences.length > 0) {
+        return {
+          title: aiRes.title || title || 'Bài luyện Shadowing',
+          hskLevel: requestedHsk !== 'auto' ? requestedHsk : (aiRes.hskLevel || 'HSK2'),
+          sentences: aiRes.sentences.map(s => ({
+            hz: String(s.hz || '').trim(),
+            py: String(s.py || generateLocalPinyin(s.hz)).trim(),
+            vi: String(s.vi || '').trim()
+          })).filter(s => s.hz.length > 0)
+        };
+      }
+    } catch (e) {
+      console.warn("AI Shadowing parsing error, falling back to local parsing:", e);
+    }
+  }
+
+  // Fallback xử lý cục bộ bằng pinyinPro
+  const cleanSentences = (fallbackSentences.length > 0 ? fallbackSentences : [rawText.trim()]).map(hz => ({
+    hz,
+    py: generateLocalPinyin(hz),
+    vi: ""
+  }));
+
+  return {
+    title: title || 'Bài đọc tiếng Trung',
+    hskLevel: requestedHsk !== 'auto' ? requestedHsk : 'HSK2',
+    sentences: cleanSentences
+  };
+}
+
 // Xuất toàn cục cho toàn bộ các module script
 window.cards = cards;
 window.customFolders = customFolders;
@@ -349,3 +425,4 @@ window.generateLocalPinyin = generateLocalPinyin;
 window.extractJsonFromText = extractJsonFromText;
 window.callOpenRouterJson = callOpenRouterJson;
 window.analyzeChineseSentencesWithAI = analyzeChineseSentencesWithAI;
+window.analyzeShadowingTextWithAI = analyzeShadowingTextWithAI;

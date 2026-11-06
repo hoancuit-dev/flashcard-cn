@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -42,7 +42,6 @@
           <button type="button" data-lang-switch="bi" class="lang-switch-btn px-2.5 py-1 rounded-full transition">🇻🇳/🇨🇳 Song ngữ</button>
         </div>
       </div>
-
       <div class="text-center space-y-1.5">
         <div class="inline-flex items-center justify-center w-16 h-16 rounded-[20px] bg-gradient-to-b from-[#0077ED] to-[#0071E3] text-white text-3xl shadow-[0_8px_20px_rgba(0,113,227,0.3)] mb-1">
           <i class="fa-solid fa-language"></i>
@@ -50,7 +49,6 @@
         <h1 class="text-2xl font-bold tracking-tight text-[#1D1D1F]">HSK Flashcards</h1>
         <p id="i18nAuthSubtitle" class="text-xs text-[#86868B]">Đăng nhập để tải tiến trình học cá nhân của bạn • 登录以加载您的个人学习进度</p>
       </div>
-
       <!-- Thông báo lần đầu chưa có tài khoản nào trên DB -->
       <div id="authFirstSetupBanner" class="hidden bg-[#FFF9EB] border border-[#FF9500]/30 rounded-2xl p-3.5 text-xs text-amber-900 space-y-1">
         <div class="font-bold flex items-center gap-1.5">
@@ -59,7 +57,6 @@
         </div>
         <p id="i18nFirstSetupDesc" class="text-amber-800/90">Database hiện chưa có tài khoản nào. Hãy tạo tài khoản đầu tiên của bạn — toàn bộ thẻ và tiến trình học hiện có sẽ thuộc về tài khoản này.</p>
       </div>
-
       <!-- Chuyển tab Đăng nhập / Đăng ký (Apple Segmented Control) -->
       <div id="authTabSwitcher" class="grid grid-cols-2 gap-1 apple-segmented text-xs font-semibold">
         <button type="button" id="tabBtnLogin" class="py-2 rounded-full bg-white text-[#1D1D1F] shadow-sm transition">
@@ -69,7 +66,6 @@
           <i class="fa-solid fa-user-plus mr-1"></i> <span id="i18nTabRegister">Tạo tài khoản • 注册</span>
         </button>
       </div>
-
       <!-- Form Đăng nhập / Đăng ký -->
       <form id="authForm" class="space-y-3.5" onsubmit="return false;">
         <div>
@@ -79,7 +75,6 @@
           <input type="text" id="authUsername" autocomplete="username" required placeholder="Nhập tên user / 请输入用户名"
             class="w-full apple-input rounded-2xl px-4 py-3 text-sm">
         </div>
-
         <div>
           <label class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
             <i class="fa-solid fa-lock text-[#0071E3] mr-1"></i><span id="i18nLabelPassword">Mật khẩu • 密码:</span>
@@ -93,7 +88,6 @@
             </button>
           </div>
         </div>
-
         <div id="authConfirmPwdBox" class="hidden">
           <label class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
             <i class="fa-solid fa-check-double text-[#0071E3] mr-1"></i><span id="i18nLabelConfirmPwd">Nhập lại mật khẩu • 确认密码:</span>
@@ -101,14 +95,12 @@
           <input type="password" id="authConfirmPassword" autocomplete="new-password" placeholder="Nhập lại mật khẩu / 请再次输入密码..."
             class="w-full apple-input rounded-2xl px-4 py-3 text-sm">
         </div>
-
         <div class="flex items-center justify-between text-xs text-[#86868B] pt-0.5">
           <label class="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" id="authRememberMe" checked class="rounded text-[#0071E3] focus:ring-[#0071E3]">
             <span id="i18nRememberMe">Ghi nhớ đăng nhập trên thiết bị này • 记住登录状态</span>
           </label>
         </div>
-
         <div id="authErrorMsg" class="hidden p-3.5 rounded-2xl bg-[#FFF2F2] border border-[#FF3B30]/20 text-xs text-[#FF3B30] font-medium"></div>
 
         <button type="submit" id="btnSubmitAuth"
@@ -141,7 +133,6 @@
             <i id="settingsGearIcon" class="fa-solid fa-sliders ml-0.5 text-[#86868B]"></i>
           </button>
         </div>
-
         <div class="flex items-center gap-1.5 sm:gap-2">
           <!-- Nút chuyển đổi Darkmode / Lightmode trong Header -->
           <button type="button" class="theme-toggle-btn w-7 h-7 sm:w-8 sm:h-8 rounded-full apple-segmented flex items-center justify-center text-xs apple-btn" title="Chế độ Sáng / Tối • 亮色/暗色模式">
@@ -170,7 +161,6 @@
           </div>
         </div>
       </div>
-
       <!-- Segmented Navigation + Quick Action Pills -->
       <div class="flex items-center justify-between gap-1.5 sm:gap-2 flex-wrap">
         <div class="inline-flex items-center apple-segmented flex-1 sm:flex-initial justify-center">
@@ -186,8 +176,11 @@
             class="flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn whitespace-nowrap">
             <i class="fa-solid fa-folder-open mr-1"></i> <span id="i18nNavList">Bộ thẻ • 牌组</span>
           </button>
+          <button id="btnShadowingMode"
+            class="flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn whitespace-nowrap">
+            <i class="fa-solid fa-headphones mr-1 text-[#AF52DE]"></i> <span id="i18nNavShadowing">Shadowing • 跟读</span>
+          </button>
         </div>
-
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button id="btnOpenBulkModal"
             class="px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#FF9500]/12 hover:bg-[#FF9500]/20 text-[#C93400] border border-[#FF9500]/25 font-semibold text-xs sm:text-sm apple-btn whitespace-nowrap">
@@ -235,7 +228,6 @@
           </button>
         </div>
       </div>
-
       <!-- Thanh công cụ Lọc Bộ thẻ, Chỉnh sửa Bộ thẻ & Trạng thái -->
       <div
         class="apple-surface p-3 sm:p-4 rounded-[22px] flex flex-wrap justify-between items-center gap-2 sm:gap-3">
@@ -261,7 +253,6 @@
               <i class="fa-solid fa-pen text-[9px] text-[#0071E3] mr-0.5"></i><span id="i18nBtnEditFolderQuick">Sửa</span>
             </button>
           </div>
-
           <!-- Chọn bộ lọc trạng thái / SRS -->
           <select id="filterSelect"
             class="text-xs rounded-full px-2.5 sm:px-3 py-1.5 bg-[#F5F5F7] border border-black/[0.06] font-semibold text-[#1D1D1F] outline-none cursor-pointer max-w-[130px] sm:max-w-none truncate">
@@ -307,7 +298,6 @@
           </button>
         </div>
       </div>
-
       <!-- Flashcard Interactive Area (Apple Card Aesthetic & Mobile Responsive Height) -->
       <div class="flex justify-center items-center py-1">
         <div id="cardContainer" class="w-full max-w-2xl h-[310px] xs:h-[330px] sm:h-[350px] perspective-1000 cursor-pointer select-none">
@@ -344,7 +334,6 @@
                 </span>
               </div>
             </div>
-
             <!-- Mặt Sau (Apple Midnight Titanium) -->
             <div
               class="absolute w-full h-full apple-card-back text-white rounded-[26px] sm:rounded-[30px] p-5 sm:p-8 flex flex-col justify-between backface-hidden rotate-y-180">
@@ -365,11 +354,9 @@
                 Đánh giá bên dưới để lên lịch Lặp lại ngắt quãng (SRS) • 请在下方评估记忆程度 👇
               </div>
             </div>
-
           </div>
         </div>
       </div>
-
       <!-- Spaced Repetition Buttons (Apple Pill Buttons & Mobile Responsive Layout) -->
       <div class="w-full max-w-2xl mx-auto space-y-2 sm:space-y-2.5">
         <!-- 3 nút đánh giá mức độ ghi nhớ SRS (Rộng rãi, dễ bấm trên điện thoại) -->
@@ -390,7 +377,6 @@
             <div id="btnEasySubtext" class="text-[9px] sm:text-[10px] font-normal text-[#248A3D]/80">Ôn sau 3-7+ ngày</div>
           </button>
         </div>
-
         <!-- Hàng điều hướng Trước / Sau + Chỉ số tiến độ mobile -->
         <div class="flex items-center justify-between gap-3 px-1">
           <button id="btnPrev"
@@ -405,7 +391,6 @@
         </div>
       </div>
     </div>
-
     <!-- Quiz Mode View (Luyện tập đa chế độ + Chọn thư mục + SRS) -->
     <div id="viewQuiz" class="hidden space-y-6 max-w-2xl mx-auto">
       <div class="apple-surface p-6 sm:p-7 rounded-[28px] space-y-4">
@@ -434,7 +419,6 @@
             </span>
           </div>
         </div>
-
         <!-- Chọn thư mục bộ thẻ để kiểm tra (Chọn 1, nhiều hoặc tất cả) -->
         <div class="bg-[#F5F5F7] p-3.5 rounded-2xl border border-black/[0.05] space-y-2">
           <div class="flex justify-between items-center">
@@ -448,7 +432,6 @@
           </div>
           <div id="quizFolderChips" class="flex flex-wrap gap-1.5"></div>
         </div>
-
         <!-- Bộ chọn chế độ kiểm tra -->
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 bg-[#E8E8ED]/70 p-1.5 rounded-2xl text-xs font-semibold">
           <button type="button" data-quiz-mode="zh_to_vi"
@@ -472,7 +455,6 @@
             🎲 Trộn<br><span id="i18nQModeMixed" class="text-[11px] font-medium">Ngẫu nhiên • 随机</span>
           </button>
         </div>
-
         <p id="quizQuestion" class="text-base sm:text-lg font-semibold text-[#1D1D1F]">
           Chọn nghĩa đúng của câu tiếng Trung sau:
         </p>
@@ -484,7 +466,6 @@
             <div id="quizTargetHanzi" class="text-2xl font-bold text-[#1D1D1F]"></div>
             <div id="quizTargetPinyin" class="text-sm font-medium text-[#0071E3]"></div>
           </div>
-
           <!-- Điều khiển âm thanh cho chế độ Nghe -->
           <div id="quizAudioPrompt" class="hidden py-2 space-y-3">
             <div class="flex justify-center items-center gap-3">
@@ -505,7 +486,6 @@
             </div>
           </div>
         </div>
-
         <!-- Khung chọn 4 đáp án (Dùng cho Trung->Việt, Việt->Trung, Nghe->Chọn) -->
         <div id="quizOptions" class="grid grid-cols-1 gap-2.5 pt-1"></div>
 
@@ -513,6 +493,7 @@
         <div id="quizTypingBox" class="hidden space-y-3 pt-1">
           <div class="flex flex-col sm:flex-row gap-2">
             <input type="text" id="quizTypingInput"
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-form-type="other"
               placeholder="Nhập nghĩa tiếng Việt bạn nghe được (chấp nhận từ đồng nghĩa)... / 输入您听到的越南语意思..."
               class="flex-1 apple-input rounded-2xl px-4 py-3 text-sm">
             <button type="button" id="btnSubmitTyping"
@@ -524,7 +505,6 @@
             <i class="fa-solid fa-wand-magic-sparkles text-[#FF9500] mr-1"></i><span id="i18nTypingSynonymHint">Hệ thống tự động chấp nhận các từ đồng nghĩa và cách diễn đạt tương đương • 系统支持同义词与相近表达评判。</span>
           </p>
         </div>
-
         <div id="quizFeedback" class="hidden p-4 rounded-2xl text-sm font-medium"></div>
         <div class="flex justify-end pt-2">
           <button id="btnNextQuiz"
@@ -538,7 +518,6 @@
         </div>
       </div>
     </div>
-
     <!-- List & Decks Mode View (Quản lý & Chỉnh sửa Bộ thẻ + Danh sách câu) -->
     <div id="viewList" class="hidden space-y-5">
       <!-- Khu vực Quản lý Bộ thẻ (Decks Overview - Cho phép Đổi tên, Thêm câu, Xóa bộ thẻ sau khi thêm) -->
@@ -562,7 +541,6 @@
         </div>
         <div id="decksOverviewGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5"></div>
       </div>
-
       <!-- Thanh tìm kiếm & lọc danh sách thẻ -->
       <div
         class="apple-surface p-3.5 sm:p-4 rounded-[24px] flex flex-wrap justify-between items-center gap-2.5 sm:gap-3">
@@ -575,6 +553,14 @@
           <select id="listFolderSelect"
             class="text-xs border border-black/[0.08] rounded-full px-2.5 sm:px-3 py-2 bg-[#F5F5F7] text-[#1D1D1F] font-semibold outline-none flex-1 sm:flex-initial max-w-full">
             <option value="all">📁 Tất cả bộ thẻ</option>
+          </select>
+          <select id="listPageSizeSelect"
+            class="text-xs border border-black/[0.08] rounded-full px-2.5 sm:px-3 py-2 bg-[#F5F5F7] text-[#1D1D1F] font-semibold outline-none shrink-0"
+            title="Số câu hiển thị trên mỗi trang / 每页显示条数">
+            <option value="10">10 / trang • 页</option>
+            <option value="20" selected>20 / trang • 页</option>
+            <option value="50">50 / trang • 页</option>
+            <option value="100">100 / trang • 页</option>
           </select>
           <input type="text" id="searchListInput" placeholder="Tìm chữ Hán, Pinyin, nghĩa... / 搜索..."
             class="text-xs apple-input rounded-full px-3 py-2 flex-1 sm:w-52">
@@ -591,6 +577,174 @@
       </div>
       <div id="allCardsTable"
         class="apple-surface rounded-[24px] divide-y divide-black/[0.05] overflow-hidden"></div>
+
+      <!-- Thanh điều khiển phân trang Apple Style -->
+      <div id="listPaginationContainer"
+        class="apple-surface p-3 sm:p-4 rounded-[22px] flex flex-wrap justify-between items-center gap-3">
+        <div class="text-xs text-[#86868B] font-medium" id="listPaginationInfo">
+          Đang hiển thị trang 1 / 1
+        </div>
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button type="button" id="btnListPrevPage"
+            class="px-3 sm:px-3.5 py-1.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] font-semibold text-xs apple-btn disabled:opacity-40 disabled:cursor-not-allowed">
+            <i class="fa-solid fa-chevron-left mr-1"></i> <span id="i18nListPrevPage">Trước • 上页</span>
+          </button>
+          <div id="listPageNumbers" class="flex items-center gap-1"></div>
+          <button type="button" id="btnListNextPage"
+            class="px-3 sm:px-3.5 py-1.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] font-semibold text-xs apple-btn disabled:opacity-40 disabled:cursor-not-allowed">
+            <span id="i18nListNextPage">Sau • 下页</span> <i class="fa-solid fa-chevron-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+div>
+
+    <!-- Shadowing Mode View (Luyện nghe - Đọc đuổi theo câu phong cách Apple) -->
+    <div id="viewShadowing" class="hidden space-y-5">
+      <!-- Thanh công cụ Shadowing: Chọn bài, lọc HSK, nút Import AI -->
+      <div class="apple-surface p-3.5 sm:p-4 rounded-[24px] flex flex-wrap justify-between items-center gap-2.5 sm:gap-3">
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <div class="w-8 h-8 rounded-xl bg-[#AF52DE]/15 text-[#AF52DE] flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-headphones"></i>
+          </div>
+          <div>
+            <h3 id="i18nShadowingHeaderTitle" class="font-bold text-sm sm:text-base text-[#1D1D1F]">
+              Luyện nghe & Đọc đuổi (Shadowing) • 影子跟读
+            </h3>
+            <p id="i18nShadowingHeaderSubtitle" class="text-[11px] text-[#86868B]">
+              Nghe phát âm chuẩn, lặp lại từng câu để nâng cao phản xạ giao tiếp và ngữ điệu tự nhiên.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto">
+          <!-- Chọn cấp độ HSK -->
+          <select id="shadowingHskFilter"
+            class="text-xs border border-black/[0.08] rounded-full px-2.5 sm:px-3 py-2 bg-[#F5F5F7] text-[#1D1D1F] font-semibold outline-none shrink-0">
+            <option value="all">Tất cả cấp độ • 全部</option>
+            <option value="HSK1">HSK 1</option>
+            <option value="HSK2">HSK 2</option>
+            <option value="HSK3">HSK 3</option>
+            <option value="HSK4">HSK 4</option>
+            <option value="HSK5">HSK 5</option>
+            <option value="HSK6">HSK 6</option>
+          </select>
+
+          <!-- Chọn bài đọc -->
+          <select id="shadowingLessonSelect"
+            class="text-xs border border-black/[0.08] rounded-full px-2.5 sm:px-3 py-2 bg-[#F5F5F7] text-[#1D1D1F] font-semibold outline-none flex-1 sm:w-56 truncate">
+          </select>
+
+          <!-- Nút Import bài đọc mới bằng AI -->
+          <button id="btnOpenImportShadowingModal"
+            class="text-xs px-3 sm:px-3.5 py-2 rounded-full bg-[#AF52DE] hover:bg-[#9B40C8] text-white font-semibold apple-btn shrink-0 shadow-sm flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="i18nBtnImportShadowing">+ Import AI • 导入</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Khung phát Shadowing chính (Apple Interactive Player Card) -->
+      <div class="apple-surface rounded-[28px] p-6 sm:p-8 space-y-6">
+        <!-- Header bài học + Tùy chọn ẩn hiện Pinyin / Nghĩa -->
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-black/[0.06] pb-3.5">
+          <div class="flex items-center gap-2">
+            <span id="shadowingLessonBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-[#AF52DE]/12 text-[#AF52DE]">
+              HSK 1
+            </span>
+            <span id="shadowingProgressBadge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-black/[0.04] text-[#86868B]">
+              Câu 1 / 5
+            </span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <button type="button" id="btnToggleShadowingPinyin"
+              class="text-xs px-2.5 py-1 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-medium apple-btn flex items-center gap-1">
+              <i class="fa-solid fa-font"></i> <span id="shadowingPinyinToggleLabel">Pinyin: BẬT</span>
+            </button>
+            <button type="button" id="btnToggleShadowingMeaning"
+              class="text-xs px-2.5 py-1 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-medium apple-btn flex items-center gap-1">
+              <i class="fa-solid fa-language"></i> <span id="shadowingMeaningToggleLabel">Nghĩa: BẬT</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Khung hiển thị câu tiếng Trung cỡ lớn -->
+        <div class="text-center py-4 sm:py-6 space-y-3 min-h-[140px] flex flex-col justify-center items-center">
+          <div id="shadowingCardHanzi" class="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1D1D1F] tracking-wide leading-relaxed">
+            你好，很高兴认识你！
+          </div>
+          <div id="shadowingCardPinyin" class="text-base sm:text-lg font-medium text-[#0071E3]">
+            Nǐ hǎo, hěn gāoxìng rènshí nǐ!
+          </div>
+          <div id="shadowingCardMeaning" class="text-sm sm:text-base font-medium text-[#86868B] max-w-xl mx-auto">
+            Xin chào, rất vui được làm quen với bạn!
+          </div>
+        </div>
+
+        <!-- Bộ điều khiển Audio Player Apple Style -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-black/[0.06]">
+          <!-- Nút Câu trước / Câu sau -->
+          <div class="flex items-center gap-2 order-2 sm:order-1">
+            <button type="button" id="btnShadowingPrev"
+              class="w-10 h-10 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] flex items-center justify-center apple-btn shadow-sm"
+              title="Câu trước / 上一句">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button type="button" id="btnShadowingNext"
+              class="w-10 h-10 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#1D1D1F] flex items-center justify-center apple-btn shadow-sm"
+              title="Câu tiếp theo / 下一句">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <!-- Nút Play chính giữa -->
+          <div class="flex items-center gap-3 order-1 sm:order-2">
+            <button type="button" id="btnShadowingSlow"
+              class="w-10 h-10 rounded-full bg-white hover:bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] flex items-center justify-center apple-btn text-xs shadow-sm"
+              title="Phát tốc độ chậm (0.75x) / 慢速播放">
+              <i class="fa-solid fa-turtle text-[#0071E3]"></i>
+            </button>
+
+            <button type="button" id="btnShadowingPlay"
+              class="w-14 h-14 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white flex items-center justify-center apple-btn shadow-[0_6px_20px_rgba(0,113,227,0.35)] text-xl transition transform active:scale-95"
+              title="Phát âm câu này / 播放本句">
+              <i class="fa-solid fa-play ml-0.5"></i>
+            </button>
+
+            <button type="button" id="btnShadowingLoop"
+              class="w-10 h-10 rounded-full bg-white hover:bg-black/[0.04] text-[#86868B] border border-black/[0.08] flex items-center justify-center apple-btn text-xs shadow-sm"
+              title="Lặp lại câu tự động / 循环朗读">
+              <i class="fa-solid fa-repeat"></i>
+            </button>
+          </div>
+
+          <!-- Tùy chọn Tự chuyển câu & Thêm vào thẻ học -->
+          <div class="flex items-center gap-2 order-3">
+            <button type="button" id="btnShadowingAutoNext"
+              class="text-xs px-3 py-2 rounded-full bg-black/[0.04] text-[#86868B] border border-black/[0.06] font-medium apple-btn flex items-center gap-1.5"
+              title="Tự động đọc sang câu tiếp sau khi bạn nhại theo">
+              <i class="fa-solid fa-forward-step"></i> <span id="shadowingAutoNextLabel">Tự chuyển: TẮT</span>
+            </button>
+
+            <button type="button" id="btnShadowingAddToFlashcard"
+              class="text-xs px-3 py-2 rounded-full bg-[#34C759]/12 hover:bg-[#34C759]/20 text-[#1D8338] border border-[#34C759]/25 font-semibold apple-btn flex items-center gap-1.5"
+              title="Lưu câu này vào bộ Flashcard để ôn tập SRS">
+              <i class="fa-solid fa-bookmark"></i> <span id="i18nBtnShadowingAddFlashcard">+ Thẻ học</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Danh sách toàn bộ các câu trong bài đọc -->
+      <div class="apple-surface p-5 rounded-[24px] space-y-3">
+        <div class="flex justify-between items-center">
+          <h4 id="i18nShadowingListTitle" class="font-bold text-sm text-[#1D1D1F]">
+            Nội dung chi tiết bài đọc • 课文句子列表
+          </h4>
+          <span id="shadowingLessonSentenceCount" class="text-xs text-[#86868B]">5 câu / 句</span>
+        </div>
+        <div id="shadowingSentencesList" class="space-y-2 max-h-[360px] overflow-y-auto pr-1"></div>
+      </div>
     </div>
 
   </main>
@@ -606,7 +760,6 @@
         </h3>
         <button id="btnCloseModal" class="w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center text-lg font-bold">&times;</button>
       </div>
-
       <div class="space-y-3.5">
         <!-- Chọn hoặc Tạo bộ thẻ mới -->
         <div>
@@ -622,7 +775,6 @@
             </button>
           </div>
         </div>
-
         <div>
           <div class="flex justify-between items-center mb-1.5">
             <label id="i18nModalAddHzLabel" class="block text-xs font-semibold text-[#1D1D1F]">Chữ Hán (Chỉ cần nhập mục này) • 汉字:</label>
@@ -651,7 +803,6 @@
             class="w-full apple-input rounded-2xl p-3 text-sm"></textarea>
         </div>
       </div>
-
       <div class="flex justify-end gap-2 pt-2 border-t border-black/[0.06]">
         <button id="btnCancelAdd"
           class="px-4 py-2.5 rounded-full bg-black/[0.05] text-[#1D1D1F] font-semibold text-sm hover:bg-black/[0.09] apple-btn">Hủy • 取消</button>
@@ -674,7 +825,6 @@
         </div>
         <button id="btnCloseBulkModal" class="w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center text-lg font-bold">&times;</button>
       </div>
-
       <div class="space-y-3.5 overflow-y-auto flex-1 pr-1">
         <!-- Chọn hoặc Tạo thư mục cho loạt thẻ import -->
         <div
@@ -691,14 +841,12 @@
             </button>
           </div>
         </div>
-
         <div>
           <label id="i18nModalBulkInputLabel" class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">Danh sách câu tiếng Trung (mỗi câu 1 dòng) • 中文句子列表（每行一句）:</label>
           <textarea id="bulkInputHz" rows="4"
             placeholder="Ví dụ / 例如:&#10;今天天气非常好，我们去公园散步吧。&#10;虽然汉语有点儿难，但是很有意思。&#10;你周末一般喜欢做什么？"
             class="w-full apple-input rounded-2xl p-3.5 text-sm font-sans"></textarea>
         </div>
-
         <div class="flex justify-between items-center gap-2 flex-wrap">
           <span id="bulkStatusText" class="text-xs text-[#86868B]">Mẹo: Sau khi phân tích, bạn có thể sửa trực tiếp Chữ Hán, Pinyin, Nghĩa hoặc Ngữ pháp bên dưới.</span>
           <button id="btnAnalyzeBulk"
@@ -706,7 +854,6 @@
             <i class="fa-solid fa-bolt"></i> <span id="i18nBtnAnalyzeBulk">Phân tích & Tự điền tất cả • AI解析全部</span>
           </button>
         </div>
-
         <!-- Bảng xem trước & chỉnh sửa trực tiếp kết quả -->
         <div id="bulkPreviewContainer" class="hidden space-y-2 pt-2">
           <div class="flex justify-between items-center">
@@ -717,7 +864,6 @@
             class="border border-black/[0.08] rounded-2xl divide-y divide-black/[0.06] max-h-64 overflow-y-auto bg-[#F5F5F7]/60"></div>
         </div>
       </div>
-
       <div class="flex justify-end gap-2 pt-3 border-t border-black/[0.06]">
         <button id="btnCancelBulk"
           class="px-4 py-2.5 rounded-full bg-black/[0.05] text-[#1D1D1F] font-semibold text-sm hover:bg-black/[0.09] apple-btn">Đóng • 关闭</button>
@@ -739,7 +885,6 @@
         </h3>
         <button id="btnCloseSettings" class="w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center text-lg font-bold">&times;</button>
       </div>
-
       <div class="space-y-4 text-sm">
         <!-- Phần 1: Đồng bộ dữ liệu Cloud -->
         <div class="p-4 bg-[#F5F5F7] border border-black/[0.06] rounded-2xl flex items-center justify-between gap-3">
@@ -754,7 +899,6 @@
             <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Đồng bộ ngay • 立即同步
           </button>
         </div>
-
         <!-- Phần 2: OpenRouter AI (Không hiển thị lại key cũ ra DOM) -->
         <div class="p-4 bg-[#F5F5F7] border border-black/[0.06] rounded-2xl space-y-3">
           <h4 class="font-bold text-[#1D1D1F] flex items-center gap-1.5">
@@ -783,7 +927,6 @@
           </div>
         </div>
       </div>
-
       <div class="flex justify-end gap-2 pt-2 border-t border-black/[0.06]">
         <button id="btnCancelSettings"
           class="px-4 py-2.5 rounded-full bg-black/[0.05] text-[#1D1D1F] font-semibold text-sm hover:bg-black/[0.09] apple-btn">Đóng • 关闭</button>
@@ -804,7 +947,6 @@
         </h3>
         <button id="btnCloseUserModal" class="w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center text-lg font-bold">&times;</button>
       </div>
-
       <!-- Thông tin User hiện tại -->
       <div class="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] flex items-center justify-between gap-3">
         <div class="space-y-0.5">
@@ -820,7 +962,6 @@
           <i class="fa-solid fa-right-from-bracket mr-1"></i> <span id="i18nBtnLogoutModal">Đăng xuất • 退出</span>
         </button>
       </div>
-
       <!-- Đổi mật khẩu -->
       <div class="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] space-y-2.5">
         <h4 class="text-xs font-bold uppercase tracking-wider text-[#86868B]">
@@ -839,7 +980,6 @@
           </button>
         </div>
       </div>
-
       <!-- Quản trị viên (Chỉ hiện với Owner) -->
       <div id="ownerAdminSection" class="hidden p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] space-y-3">
         <div class="flex items-center justify-between gap-2">
@@ -866,15 +1006,69 @@
             + Thêm User • 添加
           </button>
         </div>
-
         <!-- Danh sách các user trong DB -->
         <div id="adminUserListContainer" class="divide-y divide-black/[0.06] bg-white rounded-xl border border-black/[0.06] max-h-40 overflow-y-auto text-xs">
         </div>
       </div>
-
       <div class="flex justify-end pt-2 border-t border-black/[0.06]">
         <button type="button" id="btnCloseUserModalBottom"
           class="px-4 py-2 rounded-full bg-black/[0.05] text-[#1D1D1F] font-semibold text-sm hover:bg-black/[0.09] apple-btn">Đóng • 关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Import bài đọc Shadowing bằng AI -->
+  <div id="modalImportShadowing"
+    class="hidden fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white/95 backdrop-blur-2xl w-full max-w-lg rounded-[28px] shadow-[0_24px_60px_rgba(0,0,0,0.16)] border border-black/[0.06] p-6 sm:p-7 space-y-4">
+      <div class="flex justify-between items-center border-b border-black/[0.06] pb-3.5">
+        <h3 class="text-lg font-bold text-[#1D1D1F] flex items-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-[#AF52DE]"></i>
+          <span id="i18nModalImportShadowingTitle">Import bài đọc Shadowing • 导入跟读课文</span>
+        </h3>
+        <button id="btnCloseImportShadowingModal" class="w-8 h-8 rounded-full bg-black/[0.05] hover:bg-black/[0.1] text-[#86868B] hover:text-[#1D1D1F] flex items-center justify-center text-lg font-bold">&times;</button>
+      </div>
+
+      <div class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+            <span id="i18nShadowingTitleLabel">Tiêu đề bài đọc • 课文标题:</span>
+          </label>
+          <input type="text" id="inputShadowingTitle" placeholder="Ví dụ: Giới thiệu bản thân / 例如: 自我介绍..."
+            class="w-full apple-input rounded-2xl px-3.5 py-2.5 text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+            <span id="i18nShadowingHskLabel">Cấp độ HSK • HSK等级:</span>
+          </label>
+          <select id="inputShadowingHsk" class="w-full apple-input rounded-2xl px-3.5 py-2.5 text-sm">
+            <option value="auto">✨ AI tự động phân tích độ khó HSK • AI自动评估</option>
+            <option value="HSK1">HSK 1 (Cơ bản / 初级)</option>
+            <option value="HSK2">HSK 2</option>
+            <option value="HSK3">HSK 3</option>
+            <option value="HSK4">HSK 4</option>
+            <option value="HSK5">HSK 5</option>
+            <option value="HSK6">HSK 6 (Nâng cao / 高级)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+            <span id="i18nShadowingContentLabel">Đoạn văn bản tiếng Trung • 中文段落文本:</span>
+          </label>
+          <textarea id="inputShadowingText" rows="6"
+            placeholder="Dán đoạn văn tiếng Trung vào đây (hội thoại, tin tức, bài viết...). AI sẽ tự động tách từng câu, sinh Pinyin và dịch nghĩa tiếng Việt chuẩn xác..."
+            class="w-full apple-input rounded-2xl px-3.5 py-2.5 text-sm"></textarea>
+        </div>
+
+        <div id="shadowingImportStatus" class="hidden p-3 rounded-2xl text-xs font-medium"></div>
+
+        <button type="button" id="btnSubmitImportShadowing"
+          class="w-full py-3.5 rounded-2xl bg-[#AF52DE] hover:bg-[#9B40C8] text-white font-semibold text-sm shadow-[0_6px_16px_rgba(175,82,222,0.28)] apple-btn flex items-center justify-center gap-2">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span id="i18nBtnSubmitImportShadowing">Phân tích & Tách câu bằng AI • AI解析课文</span>
+        </button>
       </div>
     </div>
   </div>

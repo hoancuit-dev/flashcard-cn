@@ -52,9 +52,11 @@ var decksOverviewGrid = document.getElementById('decksOverviewGrid');
 var viewFlashcards = document.getElementById('viewFlashcards');
 var viewQuiz = document.getElementById('viewQuiz');
 var viewList = document.getElementById('viewList');
+var viewShadowing = document.getElementById('viewShadowing');
 var btnStudyMode = document.getElementById('btnStudyMode');
 var btnQuizMode = document.getElementById('btnQuizMode');
 var btnListMode = document.getElementById('btnListMode');
+var btnShadowingMode = document.getElementById('btnShadowingMode');
 
 // =========================================================================
 // CÁC HÀM ĐIỀU KHIỂN GIAO DIỆN THẺ (DIRECTION, PINYIN BLUR, AUTO SPEAK)
@@ -345,16 +347,18 @@ document.getElementById('btnQuizSrsNow').addEventListener('click', () => {
 // CHUYỂN ĐỔI TAB (APPLE SEGMENTED CONTROL)
 // =========================================================================
 function switchTab(activeBtn, activeView) {
-  [btnStudyMode, btnQuizMode, btnListMode].forEach(b => {
-    b.className = "px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn";
+  const allNavBtns = [btnStudyMode, btnQuizMode, btnListMode, btnShadowingMode].filter(Boolean);
+  const allViews = [viewFlashcards, viewQuiz, viewList, viewShadowing].filter(Boolean);
+
+  allNavBtns.forEach(b => {
+    b.className = "flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-full text-[#86868B] hover:text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn whitespace-nowrap";
   });
-  activeBtn.className = "px-3.5 py-1.5 rounded-full bg-white text-[#1D1D1F] font-semibold text-xs sm:text-sm shadow-sm apple-btn";
+  if (activeBtn) {
+    activeBtn.className = "flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-full bg-white text-[#1D1D1F] font-semibold text-xs sm:text-sm shadow-sm apple-btn whitespace-nowrap";
+  }
 
-  viewFlashcards.classList.add('hidden');
-  viewQuiz.classList.add('hidden');
-  viewList.classList.add('hidden');
-
-  activeView.classList.remove('hidden');
+  allViews.forEach(v => v.classList.add('hidden'));
+  if (activeView) activeView.classList.remove('hidden');
 }
 
 btnStudyMode.addEventListener('click', () => {
@@ -371,6 +375,12 @@ btnListMode.addEventListener('click', () => {
   refreshAllFolderSelectors();
   renderList();
 });
+if (btnShadowingMode) {
+  btnShadowingMode.addEventListener('click', () => {
+    switchTab(btnShadowingMode, viewShadowing);
+    initShadowingModule();
+  });
+}
 
 // =========================================================================
 // QUẢN LÝ BỘ THẺ (THƯ MỤC) & DROPDOWN SELECTORS
@@ -1072,15 +1082,69 @@ document.getElementById('btnPushLocalToCloud').addEventListener('click', async (
 });
 
 // =========================================================================
-// DANH SÁCH THẺ & XUẤT / NHẬP JSON
+// DANH SÁCH THẺ & PHÂN TRANG (PAGINATION) & XUẤT / NHẬP JSON
 // =========================================================================
 var searchListInput = document.getElementById('searchListInput');
 var allCardsTable = document.getElementById('allCardsTable');
-searchListInput.addEventListener('input', renderList);
+var listPageSizeSelect = document.getElementById('listPageSizeSelect');
+var listPaginationContainer = document.getElementById('listPaginationContainer');
+var listPaginationInfo = document.getElementById('listPaginationInfo');
+var btnListPrevPage = document.getElementById('btnListPrevPage');
+var btnListNextPage = document.getElementById('btnListNextPage');
+var listPageNumbers = document.getElementById('listPageNumbers');
+
+var listCurrentPage = 1;
+var listPageSize = 20;
+
+searchListInput.addEventListener('input', () => {
+  listCurrentPage = 1;
+  renderList();
+});
+
 listFolderSelect.addEventListener('change', () => {
+  listCurrentPage = 1;
   renderDecksOverview();
   renderList();
 });
+
+if (listPageSizeSelect) {
+  listPageSizeSelect.addEventListener('change', () => {
+    listPageSize = parseInt(listPageSizeSelect.value, 10) || 20;
+    listCurrentPage = 1;
+    renderList();
+  });
+}
+
+if (btnListPrevPage) {
+  btnListPrevPage.addEventListener('click', () => {
+    if (listCurrentPage > 1) {
+      listCurrentPage--;
+      renderList();
+      allCardsTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+}
+
+if (btnListNextPage) {
+  btnListNextPage.addEventListener('click', () => {
+    const keyword = (searchListInput.value || '').trim().toLowerCase();
+    const folderFilter = listFolderSelect.value || 'all';
+    const filtered = cards.filter(c => {
+      const matchFolder = folderFilter === 'all' || (c.folder || DEFAULT_FOLDER) === folderFilter;
+      const matchKeyword = !keyword ||
+        (c.hz && c.hz.toLowerCase().includes(keyword)) ||
+        (c.py && c.py.toLowerCase().includes(keyword)) ||
+        (c.vi && c.vi.toLowerCase().includes(keyword));
+      return matchFolder && matchKeyword;
+    });
+    const totalPages = Math.ceil(filtered.length / listPageSize) || 1;
+    if (listCurrentPage < totalPages) {
+      listCurrentPage++;
+      renderList();
+      allCardsTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+}
 
 function renderList() {
   const keyword = (searchListInput.value || '').trim().toLowerCase();
@@ -1095,15 +1159,66 @@ function renderList() {
     return matchFolder && matchKeyword;
   });
 
+  const totalPages = Math.ceil(filtered.length / listPageSize) || 1;
+  if (listCurrentPage > totalPages) listCurrentPage = totalPages;
+  if (listCurrentPage < 1) listCurrentPage = 1;
+
+  const startIndex = (listCurrentPage - 1) * listPageSize;
+  const pageItems = filtered.slice(startIndex, startIndex + listPageSize);
+
   document.getElementById('totalCardCount').textContent = t(
     `Hiển thị: ${filtered.length} / ${cards.length} câu`,
     `显示: ${filtered.length} / ${cards.length} 句`
   );
-  allCardsTable.innerHTML = filtered.map((c, i) => `
+
+  if (listPaginationInfo) {
+    listPaginationInfo.textContent = t(
+      `Trang ${listCurrentPage} / ${totalPages} (Tổng ${filtered.length} câu)`,
+      `第 ${listCurrentPage} / ${totalPages} 页（共 ${filtered.length} 句）`
+    );
+  }
+
+  if (btnListPrevPage) btnListPrevPage.disabled = (listCurrentPage <= 1);
+  if (btnListNextPage) btnListNextPage.disabled = (listCurrentPage >= totalPages);
+
+  // Render các nút số trang
+  if (listPageNumbers) {
+    listPageNumbers.innerHTML = '';
+    const maxButtons = 5;
+    let startPage = Math.max(1, listCurrentPage - 2);
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    if (endPage - startPage < maxButtons - 1) {
+      startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+      const pageBtn = document.createElement('button');
+      pageBtn.type = 'button';
+      pageBtn.className = `w-7 h-7 rounded-full text-xs font-semibold transition ${p === listCurrentPage ? 'bg-[#0071E3] text-white shadow-sm' : 'bg-black/[0.04] text-[#1D1D1F] hover:bg-black/[0.08]'}`;
+      pageBtn.textContent = p;
+      pageBtn.onclick = () => {
+        listCurrentPage = p;
+        renderList();
+        allCardsTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+      listPageNumbers.appendChild(pageBtn);
+    }
+  }
+
+  if (filtered.length === 0) {
+    allCardsTable.innerHTML = `
+      <div class="p-8 text-center text-[#86868B] text-sm font-medium">
+        ${t("Không tìm thấy câu học nào phù hợp với bộ lọc hiện tại.", "未找到符合当前筛选条件的句子。")}
+      </div>
+    `;
+    return;
+  }
+
+  allCardsTable.innerHTML = pageItems.map((c, i) => `
     <div class="p-4 sm:px-5 hover:bg-black/[0.02] transition flex items-start justify-between gap-4">
       <div class="space-y-1 flex-1 cursor-pointer" data-card-action="select" data-card-id="${c.id}">
         <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-xs font-bold text-[#86868B]">#${i + 1}</span>
+          <span class="text-xs font-bold text-[#86868B]">#${startIndex + i + 1}</span>
           <span class="text-base font-bold text-[#1D1D1F]">${c.hz}</span>
           <span class="text-xs font-medium text-[#0071E3]">${c.py || ''}</span>
           <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-black/[0.04] text-[#1D1D1F] border border-black/[0.06] font-medium">
@@ -1290,12 +1405,12 @@ inputImportJson.addEventListener('change', async (e) => {
 });
 
 // =========================================================================
-// HỆ THỐNG QUIZ (KIỂM TRA & LUYỆN TẬP)
+// HỆ THỐNG QUIZ (KIỂM TRA & LUYỆN TẬP ĐA CHẾ ĐỘ)
 // =========================================================================
 var quizQuestions = [];
 var currentQuizIndex = 0;
 var quizScore = 0;
-var selectedQuizMode = 'zh_to_vi';
+var selectedQuizModes = new Set(['zh_to_vi']); // Hỗ trợ chọn 1, nhiều hoặc cả 4 loại kiểm tra
 
 var quizCountSelect = document.getElementById('quizCountSelect');
 var quizSourceFilter = document.getElementById('quizSourceFilter');
@@ -1312,16 +1427,53 @@ var btnSubmitTyping = document.getElementById('btnSubmitTyping');
 var btnQuizPlayNormal = document.getElementById('btnQuizPlayNormal');
 var btnQuizPlaySlow = document.getElementById('btnQuizPlaySlow');
 
+function updateQuizModeButtonsUI() {
+  const allCoreModes = ['zh_to_vi', 'vi_to_zh', 'listen_choice', 'listen_type'];
+  const isAllSelected = allCoreModes.every(m => selectedQuizModes.has(m));
+
+  quizModeBtns.forEach(b => {
+    const mode = b.getAttribute('data-quiz-mode');
+    if (mode === 'mixed') {
+      if (isAllSelected) {
+        b.className = "quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-xl bg-white text-[#0071E3] shadow-sm font-semibold transition text-center border border-[#0071E3]/25";
+      } else {
+        b.className = "quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center";
+      }
+    } else {
+      if (selectedQuizModes.has(mode)) {
+        b.className = "quiz-mode-btn py-2 px-2 rounded-xl bg-white text-[#0071E3] shadow-sm font-semibold transition text-center border border-[#0071E3]/25";
+      } else {
+        b.className = "quiz-mode-btn py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center";
+      }
+    }
+  });
+}
+
 quizModeBtns.forEach(btn => {
   btn.addEventListener('click', () => {
-    selectedQuizMode = btn.getAttribute('data-quiz-mode');
-    quizModeBtns.forEach(b => {
-      b.className = b.getAttribute('data-quiz-mode') === 'mixed'
-        ? "quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-xl text-[#86868B] hover:text-[#1D1D1F] transition text-center"
-        : "quiz-mode-btn py-2 px-2 rounded-xl text-[#86868B] hover:text-[#1D1D1F] transition text-center";
-    });
-    btn.className = (selectedQuizMode === 'mixed' ? "quiz-mode-btn col-span-2 sm:col-span-1 " : "quiz-mode-btn ") +
-      "py-2 px-2 rounded-xl bg-white text-[#1D1D1F] shadow-sm font-semibold transition text-center";
+    const clickedMode = btn.getAttribute('data-quiz-mode');
+    const allCoreModes = ['zh_to_vi', 'vi_to_zh', 'listen_choice', 'listen_type'];
+
+    if (clickedMode === 'mixed') {
+      const isAllSelected = allCoreModes.every(m => selectedQuizModes.has(m));
+      if (isAllSelected) {
+        selectedQuizModes = new Set(['zh_to_vi']);
+      } else {
+        selectedQuizModes = new Set(allCoreModes);
+      }
+    } else {
+      if (selectedQuizModes.has(clickedMode)) {
+        if (selectedQuizModes.size > 1) {
+          selectedQuizModes.delete(clickedMode);
+        } else {
+          return; // Giữ ít nhất 1 loại
+        }
+      } else {
+        selectedQuizModes.add(clickedMode);
+      }
+    }
+
+    updateQuizModeButtonsUI();
     initDailyQuiz();
   });
 });
@@ -1350,13 +1502,11 @@ function getQuizPoolBySelectedFoldersAndSRS() {
 function initDailyQuiz() {
   const pool = getQuizPoolBySelectedFoldersAndSRS();
   const totalCount = Math.min(parseInt(quizCountSelect.value, 10) || 5, pool.length);
-  const allModes = ['zh_to_vi', 'vi_to_zh', 'listen_choice', 'listen_type'];
+  const activeModes = Array.from(selectedQuizModes);
+  if (activeModes.length === 0) activeModes.push('zh_to_vi');
 
   quizQuestions = pool.slice(0, totalCount).map(item => {
-    const mode = selectedQuizMode === 'mixed'
-      ? allModes[Math.floor(Math.random() * allModes.length)]
-      : selectedQuizMode;
-
+    const mode = activeModes[Math.floor(Math.random() * activeModes.length)];
     const wrongs = cards.filter(c => c.id !== item.id).sort(() => 0.5 - Math.random()).slice(0, 3);
 
     if (mode === 'vi_to_zh') {
@@ -1681,7 +1831,7 @@ async function handleTypingSubmit() {
 
 btnSubmitTyping.addEventListener('click', handleTypingSubmit);
 quizTypingInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
+  if (e.key === 'Enter' && !e.isComposing) {
     e.preventDefault();
     handleTypingSubmit();
   }
@@ -1695,6 +1845,566 @@ document.getElementById('btnNextQuiz').addEventListener('click', () => {
 document.getElementById('btnRestartQuiz').addEventListener('click', initDailyQuiz);
 
 // =========================================================================
+// HỆ THỐNG SHADOWING (LUYỆN NGHE & NÓI ĐUỔI THEO CÂU BẰNG AI)
+// =========================================================================
+var DEFAULT_SHADOWING_LESSONS = [
+  {
+    id: 'lesson_hsk1_intro',
+    title: 'Giới thiệu bản thân • 自我介绍',
+    hskLevel: 'HSK1',
+    sentences: [
+      { hz: "你好！我叫李明。", py: "Nǐ hǎo! Wǒ jiào Lǐ Míng.", vi: "Xin chào! Tôi tên là Lý Minh." },
+      { hz: "我是越南人，我正在学习汉语。", py: "Wǒ shì Yuènán rén, wǒ zhèngzài xuéxí Hànyǔ.", vi: "Tôi là người Việt Nam, tôi đang học tiếng Trung." },
+      { hz: "很高兴认识大家。", py: "Hěn gāoxìng rènshí dàjiā.", vi: "Rất vui được làm quen với mọi người." },
+      { hz: "我家有四口人：爸爸、妈妈、姐姐和我。", py: "Wǒ jiā yǒu sì kǒu rén: bàba, māmā, jiějiě hé wǒ.", vi: "Nhà tôi có 4 người: bố, mẹ, chị gái và tôi." },
+      { hz: "谢谢！祝大家今天开心！", py: "Xièxie! Zhù dàjiā jīntiān kāixīn!", vi: "Cảm ơn! Chúc mọi người hôm nay vui vẻ!" }
+    ]
+  },
+  {
+    id: 'lesson_hsk2_restaurant',
+    title: 'Đi ăn tại nhà hàng • 在餐馆吃饭',
+    hskLevel: 'HSK2',
+    sentences: [
+      { hz: "服务员，请给我们一份菜单。", py: "Fúwùyuán, qǐng gěi wǒmen yí fèn càidān.", vi: "Phục vụ ơi, vui lòng cho chúng tôi một cuốn thực đơn." },
+      { hz: "你们想吃点儿什么？", py: "Nǐmen xiǎng chī diǎnr shénme?", vi: "Các bạn muốn dùng món gì?" },
+      { hz: "我想吃北京烤鸭和炒饭。", py: "Wǒ xiǎng chī Běijīng kǎoyā hé chǎofàn.", vi: "Tôi muốn ăn vịt quay Bắc Kinh và cơm chiên." },
+      { hz: "这里的菜味道怎么样？", py: "Zhèlǐ de cài wèidào zěnmeyàng?", vi: "Món ăn ở đây hương vị thế nào?" },
+      { hz: "很好吃，但是有点儿辣。", py: "Hěn hǎochī, dànshì yǒudiǎnr là.", vi: "Rất ngon, nhưng có chút hơi cay." },
+      { hz: "服务员，我们买单！", py: "Fúwùyuán, wǒmen mǎidān!", vi: "Phục vụ ơi, chúng tôi thanh toán!" }
+    ]
+  },
+  {
+    id: 'lesson_hsk3_travel',
+    title: 'Kế hoạch du lịch • 旅行计划',
+    hskLevel: 'HSK3',
+    sentences: [
+      { hz: "下个月放假，你打算去哪儿旅游？", py: "Xià gè yuè fàngjià, nǐ dǎsuàn qù nǎr lǚyóu?", vi: "Tháng sau được nghỉ, bạn dự định đi đâu du lịch?" },
+      { hz: "我打算和朋友一起去上海和杭州。", py: "Wǒ dǎsuàn hé péngyou yìqǐ qù Shànghǎi hé Hángzhōu.", vi: "Tôi dự định cùng bạn bè đi Thượng Hải và Hàng Châu." },
+      { hz: "你已经买好高铁票了吗？", py: "Nǐ yǐjīng mǎihǎo gāotiě piào le ma?", vi: "Bạn đã mua xong vé tàu cao tốc chưa?" },
+      { hz: "我已经买好了，酒店也预订了。", py: "Wǒ yǐjīng mǎihǎole, jiǔdiàn yě yùdìngle.", vi: "Tôi đã mua xong rồi, khách sạn cũng đã đặt trước." },
+      { hz: "听说秋天的西湖风景非常美丽。", py: "Tīngshuō qiūtiān de Xīhú fēngjǐng fēicháng měilì.", vi: "Nghe nói phong cảnh Tây Hồ vào mùa thu vô cùng xinh đẹp." },
+      { hz: "祝你旅途愉快，一路平安！", py: "Zhù nǐ lǚtú yúkuài, yílù píng'ān!", vi: "Chúc bạn chuyến đi vui vẻ, thượng lộ bình an!" }
+    ]
+  }
+];
+
+var shadowingLessons = [];
+var currentShadowingLesson = null;
+var currentShadowingIndex = 0;
+var isShadowingLoop = false;
+var isShadowingAutoNext = false;
+var shadowingRate = 0.85; // 0.85 bình thường, 0.65 chậm
+var showShadowingPinyin = true;
+var showShadowingMeaning = true;
+var shadowingSpeechTimer = null;
+var isShadowingSpeaking = false;
+
+// DOM Elements cho Shadowing
+var shadowingHskFilter = document.getElementById('shadowingHskFilter');
+var shadowingLessonSelect = document.getElementById('shadowingLessonSelect');
+var btnOpenImportShadowingModal = document.getElementById('btnOpenImportShadowingModal');
+var shadowingLessonBadge = document.getElementById('shadowingLessonBadge');
+var shadowingProgressBadge = document.getElementById('shadowingProgressBadge');
+var btnToggleShadowingPinyin = document.getElementById('btnToggleShadowingPinyin');
+var shadowingPinyinToggleLabel = document.getElementById('shadowingPinyinToggleLabel');
+var btnToggleShadowingMeaning = document.getElementById('btnToggleShadowingMeaning');
+var shadowingMeaningToggleLabel = document.getElementById('shadowingMeaningToggleLabel');
+var shadowingCardHanzi = document.getElementById('shadowingCardHanzi');
+var shadowingCardPinyin = document.getElementById('shadowingCardPinyin');
+var shadowingCardMeaning = document.getElementById('shadowingCardMeaning');
+var btnShadowingPrev = document.getElementById('btnShadowingPrev');
+var btnShadowingNext = document.getElementById('btnShadowingNext');
+var btnShadowingSlow = document.getElementById('btnShadowingSlow');
+var btnShadowingPlay = document.getElementById('btnShadowingPlay');
+var btnShadowingLoop = document.getElementById('btnShadowingLoop');
+var btnShadowingAutoNext = document.getElementById('btnShadowingAutoNext');
+var shadowingAutoNextLabel = document.getElementById('shadowingAutoNextLabel');
+var btnShadowingAddToFlashcard = document.getElementById('btnShadowingAddToFlashcard');
+var shadowingLessonSentenceCount = document.getElementById('shadowingLessonSentenceCount');
+var shadowingSentencesList = document.getElementById('shadowingSentencesList');
+
+// Modal Elements cho Import Shadowing
+var modalImportShadowing = document.getElementById('modalImportShadowing');
+var btnCloseImportShadowingModal = document.getElementById('btnCloseImportShadowingModal');
+var inputShadowingTitle = document.getElementById('inputShadowingTitle');
+var inputShadowingHsk = document.getElementById('inputShadowingHsk');
+var inputShadowingText = document.getElementById('inputShadowingText');
+var shadowingImportStatus = document.getElementById('shadowingImportStatus');
+var btnSubmitImportShadowing = document.getElementById('btnSubmitImportShadowing');
+
+function loadShadowingLessonsFromStorage() {
+  const raw = localStorage.getItem('hsk_shadowing_lessons');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        shadowingLessons = parsed;
+        return;
+      }
+    } catch (e) {
+      console.warn("Lỗi đọc bài Shadowing:", e);
+    }
+  }
+  shadowingLessons = [...DEFAULT_SHADOWING_LESSONS];
+  saveShadowingLessonsToStorage();
+}
+
+function saveShadowingLessonsToStorage() {
+  try {
+    localStorage.setItem('hsk_shadowing_lessons', JSON.stringify(shadowingLessons));
+  } catch (e) {
+    console.warn("Lỗi lưu bài Shadowing:", e);
+  }
+}
+
+function renderShadowingLessonsDropdown() {
+  if (!shadowingLessonSelect) return;
+  const filter = shadowingHskFilter ? shadowingHskFilter.value : 'all';
+
+  const filtered = filter === 'all'
+    ? shadowingLessons
+    : shadowingLessons.filter(l => (l.hskLevel || 'HSK2') === filter);
+
+  shadowingLessonSelect.innerHTML = '';
+  if (filtered.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = t("Chưa có bài ở cấp độ này", "此等级暂无课文");
+    shadowingLessonSelect.appendChild(opt);
+    return;
+  }
+
+  filtered.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l.id;
+    opt.textContent = `[${l.hskLevel || 'HSK'}] ${l.title}`;
+    shadowingLessonSelect.appendChild(opt);
+  });
+
+  if (currentShadowingLesson && filtered.some(l => l.id === currentShadowingLesson.id)) {
+    shadowingLessonSelect.value = currentShadowingLesson.id;
+  } else {
+    shadowingLessonSelect.value = filtered[0].id;
+    selectShadowingLesson(filtered[0].id);
+  }
+}
+
+function selectShadowingLesson(lessonId) {
+  stopShadowingSpeech();
+  const lesson = shadowingLessons.find(l => l.id === lessonId);
+  if (!lesson) return;
+  currentShadowingLesson = lesson;
+  currentShadowingIndex = 0;
+  renderShadowingActiveSentence();
+  renderShadowingSentencesList();
+}
+
+function renderShadowingActiveSentence() {
+  if (!currentShadowingLesson || !currentShadowingLesson.sentences.length) {
+    if (shadowingCardHanzi) shadowingCardHanzi.textContent = t("Chưa có câu nào trong bài", "课文中暂无句子");
+    if (shadowingCardPinyin) shadowingCardPinyin.textContent = "";
+    if (shadowingCardMeaning) shadowingCardMeaning.textContent = "";
+    return;
+  }
+
+  const s = currentShadowingLesson.sentences[currentShadowingIndex];
+  if (!s) return;
+
+  if (shadowingCardHanzi) shadowingCardHanzi.textContent = s.hz;
+  if (shadowingCardPinyin) {
+    shadowingCardPinyin.textContent = s.py || generateLocalPinyin(s.hz);
+    shadowingCardPinyin.style.display = showShadowingPinyin ? 'block' : 'none';
+  }
+  if (shadowingCardMeaning) {
+    shadowingCardMeaning.textContent = s.vi || "";
+    shadowingCardMeaning.style.display = showShadowingMeaning ? 'block' : 'none';
+  }
+
+  if (shadowingLessonBadge) {
+    shadowingLessonBadge.textContent = currentShadowingLesson.hskLevel || 'HSK';
+  }
+  if (shadowingProgressBadge) {
+    shadowingProgressBadge.textContent = t(
+      `Câu ${currentShadowingIndex + 1} / ${currentShadowingLesson.sentences.length}`,
+      `第 ${currentShadowingIndex + 1} / ${currentShadowingLesson.sentences.length} 句`
+    );
+  }
+
+  highlightActiveSentenceInList();
+}
+
+function renderShadowingSentencesList() {
+  if (!shadowingSentencesList || !currentShadowingLesson) return;
+  const sentences = currentShadowingLesson.sentences || [];
+
+  if (shadowingLessonSentenceCount) {
+    shadowingLessonSentenceCount.textContent = t(`${sentences.length} câu`, `${sentences.length} 句`);
+  }
+
+  shadowingSentencesList.innerHTML = sentences.map((s, idx) => `
+    <div data-shadowing-idx="${idx}"
+      class="p-3 sm:px-4 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${idx === currentShadowingIndex ? 'bg-[#0071E3]/10 border-[#0071E3]/35 shadow-sm' : 'bg-[#F5F5F7] border-black/[0.04] hover:bg-black/[0.03]'}">
+      <div class="space-y-0.5 flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] font-bold ${idx === currentShadowingIndex ? 'text-[#0071E3]' : 'text-[#86868B]'}">#${idx + 1}</span>
+          <span class="text-sm sm:text-base font-bold text-[#1D1D1F] truncate">${s.hz}</span>
+        </div>
+        <p class="text-xs text-[#0071E3] font-medium truncate">${s.py || ''}</p>
+        <p class="text-xs text-[#86868B] font-medium truncate">${s.vi || ''}</p>
+      </div>
+      <button type="button" class="w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 transition ${idx === currentShadowingIndex ? 'bg-[#0071E3] text-white shadow-sm' : 'bg-black/[0.05] text-[#1D1D1F] hover:bg-black/[0.1]'}">
+        <i class="fa-solid fa-play ml-0.5"></i>
+      </button>
+    </div>
+  `).join('');
+
+  shadowingSentencesList.querySelectorAll('[data-shadowing-idx]').forEach(row => {
+    row.addEventListener('click', () => {
+      const idx = parseInt(row.getAttribute('data-shadowing-idx'), 10);
+      if (!isNaN(idx)) {
+        currentShadowingIndex = idx;
+        renderShadowingActiveSentence();
+        playShadowingSentence(currentShadowingIndex);
+      }
+    });
+  });
+}
+
+function highlightActiveSentenceInList() {
+  if (!shadowingSentencesList) return;
+  shadowingSentencesList.querySelectorAll('[data-shadowing-idx]').forEach(row => {
+    const idx = parseInt(row.getAttribute('data-shadowing-idx'), 10);
+    const isActive = idx === currentShadowingIndex;
+    row.className = `p-3 sm:px-4 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${isActive ? 'bg-[#0071E3]/10 border-[#0071E3]/35 shadow-sm' : 'bg-[#F5F5F7] border-black/[0.04] hover:bg-black/[0.03]'}`;
+    const btn = row.querySelector('button');
+    if (btn) {
+      btn.className = `w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 transition ${isActive ? 'bg-[#0071E3] text-white shadow-sm' : 'bg-black/[0.05] text-[#1D1D1F] hover:bg-black/[0.1]'}`;
+    }
+  });
+}
+
+function stopShadowingSpeech() {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  if (shadowingSpeechTimer) {
+    clearTimeout(shadowingSpeechTimer);
+    shadowingSpeechTimer = null;
+  }
+  isShadowingSpeaking = false;
+  if (btnShadowingPlay) {
+    btnShadowingPlay.innerHTML = '<i class="fa-solid fa-play ml-0.5"></i>';
+    btnShadowingPlay.classList.remove('bg-[#34C759]');
+    btnShadowingPlay.classList.add('bg-[#0071E3]');
+  }
+}
+
+function playShadowingSentence(index) {
+  if (!currentShadowingLesson || !currentShadowingLesson.sentences.length) return;
+  const s = currentShadowingLesson.sentences[index];
+  if (!s || !s.hz || !('speechSynthesis' in window)) return;
+
+  stopShadowingSpeech();
+  isShadowingSpeaking = true;
+
+  if (btnShadowingPlay) {
+    btnShadowingPlay.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+    btnShadowingPlay.classList.remove('bg-[#0071E3]');
+    btnShadowingPlay.classList.add('bg-[#34C759]');
+  }
+
+  const utterance = new SpeechSynthesisUtterance(s.hz);
+  utterance.lang = 'zh-CN';
+  utterance.rate = shadowingRate;
+
+  utterance.onend = () => {
+    isShadowingSpeaking = false;
+    if (btnShadowingPlay) {
+      btnShadowingPlay.innerHTML = '<i class="fa-solid fa-play ml-0.5"></i>';
+      btnShadowingPlay.classList.remove('bg-[#34C759]');
+      btnShadowingPlay.classList.add('bg-[#0071E3]');
+    }
+
+    if (isShadowingLoop) {
+      shadowingSpeechTimer = setTimeout(() => {
+        playShadowingSentence(currentShadowingIndex);
+      }, 800);
+    } else if (isShadowingAutoNext) {
+      // Chờ 2.5s để người học đọc đuổi (Shadowing) theo, sau đó tự chuyển sang câu tiếp theo
+      shadowingSpeechTimer = setTimeout(() => {
+        if (currentShadowingIndex < currentShadowingLesson.sentences.length - 1) {
+          currentShadowingIndex++;
+          renderShadowingActiveSentence();
+          playShadowingSentence(currentShadowingIndex);
+        } else {
+          isShadowingSpeaking = false;
+        }
+      }, 2500);
+    }
+  };
+
+  utterance.onerror = () => {
+    isShadowingSpeaking = false;
+    if (btnShadowingPlay) {
+      btnShadowingPlay.innerHTML = '<i class="fa-solid fa-play ml-0.5"></i>';
+      btnShadowingPlay.classList.remove('bg-[#34C759]');
+      btnShadowingPlay.classList.add('bg-[#0071E3]');
+    }
+  };
+
+  window.speechSynthesis.speak(utterance);
+}
+
+// Gắn sự kiện các nút điều khiển Shadowing
+if (btnShadowingPlay) {
+  btnShadowingPlay.addEventListener('click', () => {
+    if (isShadowingSpeaking) {
+      stopShadowingSpeech();
+    } else {
+      playShadowingSentence(currentShadowingIndex);
+    }
+  });
+}
+
+if (btnShadowingPrev) {
+  btnShadowingPrev.addEventListener('click', () => {
+    if (!currentShadowingLesson) return;
+    if (currentShadowingIndex > 0) {
+      currentShadowingIndex--;
+      renderShadowingActiveSentence();
+      playShadowingSentence(currentShadowingIndex);
+    }
+  });
+}
+
+if (btnShadowingNext) {
+  btnShadowingNext.addEventListener('click', () => {
+    if (!currentShadowingLesson) return;
+    if (currentShadowingIndex < currentShadowingLesson.sentences.length - 1) {
+      currentShadowingIndex++;
+      renderShadowingActiveSentence();
+      playShadowingSentence(currentShadowingIndex);
+    }
+  });
+}
+
+if (btnShadowingSlow) {
+  btnShadowingSlow.addEventListener('click', () => {
+    shadowingRate = shadowingRate === 0.85 ? 0.60 : 0.85;
+    if (shadowingRate === 0.60) {
+      btnShadowingSlow.className = "w-10 h-10 rounded-full bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/30 flex items-center justify-center apple-btn text-xs shadow-sm";
+    } else {
+      btnShadowingSlow.className = "w-10 h-10 rounded-full bg-white hover:bg-black/[0.04] text-[#1D1D1F] border border-black/[0.08] flex items-center justify-center apple-btn text-xs shadow-sm";
+    }
+    playShadowingSentence(currentShadowingIndex);
+  });
+}
+
+if (btnShadowingLoop) {
+  btnShadowingLoop.addEventListener('click', () => {
+    isShadowingLoop = !isShadowingLoop;
+    if (isShadowingLoop) {
+      isShadowingAutoNext = false;
+      if (btnShadowingAutoNext) {
+        btnShadowingAutoNext.className = "text-xs px-3 py-2 rounded-full bg-black/[0.04] text-[#86868B] border border-black/[0.06] font-medium apple-btn flex items-center gap-1.5";
+        if (shadowingAutoNextLabel) shadowingAutoNextLabel.textContent = t("Tự chuyển: TẮT", "自动换句: 关");
+      }
+      btnShadowingLoop.className = "w-10 h-10 rounded-full bg-[#FF9500]/15 text-[#FF9500] border border-[#FF9500]/30 flex items-center justify-center apple-btn text-xs shadow-sm";
+    } else {
+      btnShadowingLoop.className = "w-10 h-10 rounded-full bg-white hover:bg-black/[0.04] text-[#86868B] border border-black/[0.08] flex items-center justify-center apple-btn text-xs shadow-sm";
+      stopShadowingSpeech();
+    }
+  });
+}
+
+if (btnShadowingAutoNext) {
+  btnShadowingAutoNext.addEventListener('click', () => {
+    isShadowingAutoNext = !isShadowingAutoNext;
+    if (isShadowingAutoNext) {
+      isShadowingLoop = false;
+      if (btnShadowingLoop) {
+        btnShadowingLoop.className = "w-10 h-10 rounded-full bg-white hover:bg-black/[0.04] text-[#86868B] border border-black/[0.08] flex items-center justify-center apple-btn text-xs shadow-sm";
+      }
+      btnShadowingAutoNext.className = "text-xs px-3 py-2 rounded-full bg-[#34C759]/15 text-[#1D8338] border border-[#34C759]/30 font-semibold apple-btn flex items-center gap-1.5";
+      if (shadowingAutoNextLabel) shadowingAutoNextLabel.textContent = t("Tự chuyển: BẬT", "自动换句: 开");
+      playShadowingSentence(currentShadowingIndex);
+    } else {
+      btnShadowingAutoNext.className = "text-xs px-3 py-2 rounded-full bg-black/[0.04] text-[#86868B] border border-black/[0.06] font-medium apple-btn flex items-center gap-1.5";
+      if (shadowingAutoNextLabel) shadowingAutoNextLabel.textContent = t("Tự chuyển: TẮT", "自动换句: 关");
+      stopShadowingSpeech();
+    }
+  });
+}
+
+if (btnToggleShadowingPinyin) {
+  btnToggleShadowingPinyin.addEventListener('click', () => {
+    showShadowingPinyin = !showShadowingPinyin;
+    if (shadowingPinyinToggleLabel) {
+      shadowingPinyinToggleLabel.textContent = showShadowingPinyin
+        ? t("Pinyin: BẬT", "拼音: 开")
+        : t("Pinyin: TẮT", "拼音: 关");
+    }
+    btnToggleShadowingPinyin.className = showShadowingPinyin
+      ? "text-xs px-2.5 py-1 rounded-full bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/25 font-semibold apple-btn flex items-center gap-1"
+      : "text-xs px-2.5 py-1 rounded-full bg-black/[0.04] text-[#86868B] border border-black/[0.06] font-medium apple-btn flex items-center gap-1";
+    renderShadowingActiveSentence();
+  });
+}
+
+if (btnToggleShadowingMeaning) {
+  btnToggleShadowingMeaning.addEventListener('click', () => {
+    showShadowingMeaning = !showShadowingMeaning;
+    if (shadowingMeaningToggleLabel) {
+      shadowingMeaningToggleLabel.textContent = showShadowingMeaning
+        ? t("Nghĩa: BẬT", "释义: 开")
+        : t("Nghĩa: TẮT", "释义: 关");
+    }
+    btnToggleShadowingMeaning.className = showShadowingMeaning
+      ? "text-xs px-2.5 py-1 rounded-full bg-[#0071E3]/10 text-[#0071E3] border border-[#0071E3]/25 font-semibold apple-btn flex items-center gap-1"
+      : "text-xs px-2.5 py-1 rounded-full bg-black/[0.04] text-[#86868B] border border-black/[0.06] font-medium apple-btn flex items-center gap-1";
+    renderShadowingActiveSentence();
+  });
+}
+
+if (btnShadowingAddToFlashcard) {
+  btnShadowingAddToFlashcard.addEventListener('click', async () => {
+    if (!currentShadowingLesson || !currentShadowingLesson.sentences.length) return;
+    const s = currentShadowingLesson.sentences[currentShadowingIndex];
+    if (!s) return;
+
+    const targetFolder = currentShadowingLesson.title || "Shadowing";
+    if (!customFolders.includes(targetFolder)) {
+      customFolders.push(targetFolder);
+      saveCustomFolders(customFolders);
+    }
+
+    const newCard = {
+      id: Date.now(),
+      hz: s.hz,
+      py: s.py || generateLocalPinyin(s.hz),
+      vi: s.vi || "",
+      grammar: `• Trích từ bài Shadowing: ${currentShadowingLesson.title} (${currentShadowingLesson.hskLevel || 'HSK'})`,
+      folder: targetFolder,
+      status: 'new',
+      reviews: 0,
+      nextReview: 0,
+      intervalDays: 0,
+      wrongCount: 0,
+      lastReviewed: 0
+    };
+
+    cards.push(newCard);
+    saveToLocalStorage();
+    refreshAllFolderSelectors();
+    updateStatsSummary();
+    await upsertCardToCloud(newCard);
+
+    alert(t(
+      `Đã lưu câu "${s.hz}" vào bộ thẻ Flashcards "${targetFolder}"!`,
+      `已成功将句子 "${s.hz}" 存入牌组 "${targetFolder}"！`
+    ));
+  });
+}
+
+if (shadowingLessonSelect) {
+  shadowingLessonSelect.addEventListener('change', () => {
+    selectShadowingLesson(shadowingLessonSelect.value);
+  });
+}
+
+if (shadowingHskFilter) {
+  shadowingHskFilter.addEventListener('change', () => {
+    renderShadowingLessonsDropdown();
+  });
+}
+
+// Modal Import Shadowing
+if (btnOpenImportShadowingModal) {
+  btnOpenImportShadowingModal.addEventListener('click', () => {
+    if (modalImportShadowing) {
+      if (inputShadowingTitle) inputShadowingTitle.value = '';
+      if (inputShadowingText) inputShadowingText.value = '';
+      if (shadowingImportStatus) {
+        shadowingImportStatus.className = 'hidden';
+        shadowingImportStatus.textContent = '';
+      }
+      modalImportShadowing.classList.remove('hidden');
+    }
+  });
+}
+
+if (btnCloseImportShadowingModal) {
+  btnCloseImportShadowingModal.addEventListener('click', () => {
+    if (modalImportShadowing) modalImportShadowing.classList.add('hidden');
+  });
+}
+
+if (btnSubmitImportShadowing) {
+  btnSubmitImportShadowing.addEventListener('click', async () => {
+    const rawText = inputShadowingText ? inputShadowingText.value.trim() : '';
+    const title = inputShadowingTitle ? inputShadowingTitle.value.trim() : '';
+    const hskLevel = inputShadowingHsk ? inputShadowingHsk.value : 'auto';
+
+    if (!rawText) {
+      alert(t("Vui lòng nhập đoạn văn bản tiếng Trung!", "请输入中文段落文本！"));
+      if (inputShadowingText) inputShadowingText.focus();
+      return;
+    }
+
+    btnSubmitImportShadowing.disabled = true;
+    btnSubmitImportShadowing.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${t('Đang phân tích và tách câu bằng AI...', 'AI正在解析与分句...')}`;
+
+    if (shadowingImportStatus) {
+      shadowingImportStatus.className = 'p-3 rounded-2xl text-xs font-medium bg-[#0071E3]/10 text-[#0071E3]';
+      shadowingImportStatus.textContent = t("Đang gọi AI phân tích ngữ nghĩa, pinyin và đánh giá HSK...", "正在调用 AI 分析语义、拼音与评估 HSK 等级...");
+    }
+
+    try {
+      const result = await analyzeShadowingTextWithAI(rawText, title, hskLevel);
+      if (!result || !result.sentences || result.sentences.length === 0) {
+        throw new Error(t("Không tách được câu nào từ văn bản đã nhập!", "未能从文本中提取出有效句子！"));
+      }
+
+      const newLesson = {
+        id: `shadowing_${Date.now()}`,
+        title: result.title || title || t('Bài đọc Shadowing mới', '新跟读课文'),
+        hskLevel: result.hskLevel || 'HSK2',
+        sentences: result.sentences
+      };
+
+      shadowingLessons.unshift(newLesson);
+      saveShadowingLessonsToStorage();
+
+      if (shadowingHskFilter) shadowingHskFilter.value = 'all';
+      renderShadowingLessonsDropdown();
+      selectShadowingLesson(newLesson.id);
+
+      if (modalImportShadowing) modalImportShadowing.classList.add('hidden');
+      alert(t(
+        `Đã tạo thành công bài đọc "${newLesson.title}" (${newLesson.hskLevel}) với ${newLesson.sentences.length} câu!`,
+        `成功创建课文 "${newLesson.title}" (${newLesson.hskLevel})，共 ${newLesson.sentences.length} 句！`
+      ));
+    } catch (err) {
+      if (shadowingImportStatus) {
+        shadowingImportStatus.className = 'p-3 rounded-2xl text-xs font-medium bg-[#FF3B30]/10 text-[#FF3B30]';
+        shadowingImportStatus.textContent = err.message || t("Lỗi khi phân tích bằng AI!", "AI解析出错！");
+      }
+    } finally {
+      btnSubmitImportShadowing.disabled = false;
+      btnSubmitImportShadowing.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> <span>${t('Phân tích & Tách câu bằng AI', 'AI解析课文')}</span>`;
+    }
+  });
+}
+
+function initShadowingModule() {
+  loadShadowingLessonsFromStorage();
+  renderShadowingLessonsDropdown();
+  if (shadowingLessons.length > 0 && !currentShadowingLesson) {
+    selectShadowingLesson(shadowingLessons[0].id);
+  }
+}
+
+// =========================================================================
 // KHỞI ĐỘNG ỨNG DỤNG & PHỤC HỒI PHIÊN ĐĂNG NHẬP
 // =========================================================================
 window.refreshAllFolderSelectors = refreshAllFolderSelectors;
@@ -1704,12 +2414,15 @@ window.renderDecksOverview = renderDecksOverview;
 window.renderList = renderList;
 window.initDailyQuiz = initDailyQuiz;
 window.switchTab = switchTab;
+window.initShadowingModule = initShadowingModule;
+window.updateQuizModeButtonsUI = updateQuizModeButtonsUI;
 
 async function initAuthAndStartApp() {
   initThemeUI();
   updateDirectionButtonUI();
   applyPinyinBlurStyle();
   updateAutoSpeakButtonUI();
+  updateQuizModeButtonsUI();
   applyLanguageUI(uiLang);
   initSupabase();
 

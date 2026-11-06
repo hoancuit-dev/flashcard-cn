@@ -170,6 +170,21 @@ function applyLanguageUI(newLang) {
     setElText('btnChangePassword', 'Cập nhật mật khẩu', '更新密码');
     setElText('btnCloseUserModalBottom', 'Đóng', '关闭');
 
+    // 6. Phân trang & Shadowing (Tính năng mới)
+    setElText('i18nNavShadowing', 'Shadowing', '跟读');
+    setElText('i18nListPrevPage', 'Trước', '上页');
+    setElText('i18nListNextPage', 'Sau', '下页');
+    setElText('i18nShadowingHeaderTitle', 'Luyện nghe & Đọc đuổi (Shadowing)', '影子跟读训练');
+    setElText('i18nShadowingHeaderSubtitle', 'Nghe phát âm chuẩn, lặp lại từng câu để nâng cao phản xạ giao tiếp và ngữ điệu tự nhiên.', '听纯正中文朗读，逐句跟读复述，强化听力语感与口语表达。');
+    setElText('i18nBtnImportShadowing', '+ Import AI', '+ 导入');
+    setElText('i18nBtnShadowingAddFlashcard', '+ Thẻ học', '+ 存入卡片');
+    setElText('i18nShadowingListTitle', 'Nội dung chi tiết bài đọc', '课文句子列表');
+    setElText('i18nModalImportShadowingTitle', 'Import bài đọc Shadowing bằng AI', 'AI导入跟读课文');
+    setElText('i18nShadowingTitleLabel', 'Tiêu đề bài đọc:', '课文标题:');
+    setElText('i18nShadowingHskLabel', 'Cấp độ HSK:', 'HSK等级:');
+    setElText('i18nShadowingContentLabel', 'Đoạn văn bản tiếng Trung:', '中文段落文本:');
+    setElText('i18nBtnSubmitImportShadowing', 'Phân tích & Tách câu bằng AI', 'AI解析并生成跟读句子');
+
     // Cập nhật các thành phần động nếu ứng dụng đã tải
     if (typeof refreshAllFolderSelectors === 'function') refreshAllFolderSelectors();
     if (typeof updateStatsSummary === 'function') updateStatsSummary();
