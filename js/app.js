@@ -1410,7 +1410,8 @@ inputImportJson.addEventListener('change', async (e) => {
 var quizQuestions = [];
 var currentQuizIndex = 0;
 var quizScore = 0;
-var selectedQuizModes = new Set(['zh_to_vi']); // Hỗ trợ chọn 1, nhiều hoặc cả 4 loại kiểm tra
+var selectedQuizModes = new Set(['zh_to_vi']); // Hỗ trợ chọn 1, nhiều hoặc cả 6 loại kiểm tra
+var ALL_CORE_QUIZ_MODES = ['zh_to_vi', 'vi_to_zh', 'listen_choice', 'listen_type', 'arrange_zh', 'arrange_vi'];
 
 var quizCountSelect = document.getElementById('quizCountSelect');
 var quizSourceFilter = document.getElementById('quizSourceFilter');
@@ -1427,17 +1428,28 @@ var btnSubmitTyping = document.getElementById('btnSubmitTyping');
 var btnQuizPlayNormal = document.getElementById('btnQuizPlayNormal');
 var btnQuizPlaySlow = document.getElementById('btnQuizPlaySlow');
 
+// DOM Elements cho chế độ Ghép câu / Điền từ
+var quizArrangeBox = document.getElementById('quizArrangeBox');
+var quizArrangeHint = document.getElementById('quizArrangeHint');
+var quizArrangeAnswerZone = document.getElementById('quizArrangeAnswerZone');
+var quizArrangeBank = document.getElementById('quizArrangeBank');
+var btnArrangeClear = document.getElementById('btnArrangeClear');
+var btnSubmitArrange = document.getElementById('btnSubmitArrange');
+
+var arrangeSelectedUids = [];
+var arrangeFilledSlots = {};
+var arrangeLocked = false;
+
 function updateQuizModeButtonsUI() {
-  const allCoreModes = ['zh_to_vi', 'vi_to_zh', 'listen_choice', 'listen_type'];
-  const isAllSelected = allCoreModes.every(m => selectedQuizModes.has(m));
+  const isAllSelected = ALL_CORE_QUIZ_MODES.every(m => selectedQuizModes.has(m));
 
   quizModeBtns.forEach(b => {
     const mode = b.getAttribute('data-quiz-mode');
     if (mode === 'mixed') {
       if (isAllSelected) {
-        b.className = "quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-xl bg-white text-[#0071E3] shadow-sm font-semibold transition text-center border border-[#0071E3]/25";
+        b.className = "quiz-mode-btn col-span-2 py-2 px-2 rounded-xl bg-white text-[#0071E3] shadow-sm font-semibold transition text-center border border-[#0071E3]/25";
       } else {
-        b.className = "quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center";
+        b.className = "quiz-mode-btn col-span-2 py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center";
       }
     } else {
       if (selectedQuizModes.has(mode)) {
@@ -1452,14 +1464,13 @@ function updateQuizModeButtonsUI() {
 quizModeBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     const clickedMode = btn.getAttribute('data-quiz-mode');
-    const allCoreModes = ['zh_to_vi', 'vi_to_zh', 'listen_choice', 'listen_type'];
 
     if (clickedMode === 'mixed') {
-      const isAllSelected = allCoreModes.every(m => selectedQuizModes.has(m));
+      const isAllSelected = ALL_CORE_QUIZ_MODES.every(m => selectedQuizModes.has(m));
       if (isAllSelected) {
         selectedQuizModes = new Set(['zh_to_vi']);
       } else {
-        selectedQuizModes = new Set(allCoreModes);
+        selectedQuizModes = new Set(ALL_CORE_QUIZ_MODES);
       }
     } else {
       if (selectedQuizModes.has(clickedMode)) {
@@ -1480,6 +1491,113 @@ quizModeBtns.forEach(btn => {
 
 quizCountSelect.addEventListener('change', initDailyQuiz);
 quizSourceFilter.addEventListener('change', initDailyQuiz);
+
+/** Tách câu tiếng Trung thành các từ/cụm từ có nghĩa kèm Pinyin */
+function segmentChineseWords(hz) {
+  if (!hz) return [];
+  const clean = hz.replace(/[。！？，、；：“”‘’（）().,!?;:\s]+/g, ' ').trim();
+  if (!clean) return [];
+  let words = [];
+  if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
+    const segmenter = new Intl.Segmenter('zh-CN', { granularity: 'word' });
+    for (const seg of segmenter.segment(clean)) {
+      const w = seg.segment.trim();
+      if (w && seg.isWordLike) words.push(w);
+    }
+  }
+  if (words.length === 0) {
+    words = clean.replace(/\s+/g, '').split('').filter(Boolean);
+  }
+  return words.map(w => ({
+    text: w,
+    py: (typeof generateLocalPinyin === 'function' ? generateLocalPinyin(w) : '').toLowerCase()
+  }));
+}
+
+/** Tách câu tiếng Việt thành các từ hoặc cụm ngắn (tối đa ~8-10 thẻ) */
+function segmentVietnameseWords(vi) {
+  if (!vi) return [];
+  const clean = vi.replace(/[.,!?;:…"'()[\]]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const raw = clean.split(' ').filter(Boolean);
+  if (raw.length <= 10) {
+    return raw.map(w => ({ text: w }));
+  }
+  // Gộp 2 từ liền kề để tránh quá nhiều thẻ trên màn hình nhỏ
+  const chunks = [];
+  for (let i = 0; i < raw.length; i += 2) {
+    chunks.push({ text: raw.slice(i, i + 2).join(' ') });
+  }
+  return chunks;
+}
+
+/** Xáo trộn mảng đảm bảo khác thứ tự gốc nếu có >= 2 phần tử khác nhau */
+function shuffleTokensDiff(arr) {
+  const copy = [...arr];
+  for (let attempt = 0; attempt < 5; attempt++) {
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    const isSame = copy.every((item, idx) => item.text === arr[idx].text);
+    if (!isSame || arr.length <= 1) break;
+  }
+  return copy;
+}
+
+/** Chuẩn bị dữ liệu cho câu hỏi sắp xếp câu / điền từ khuyết */
+function buildArrangeQuestionData(item, mode) {
+  if (mode === 'arrange_zh') {
+    const tokens = segmentChineseWords(item.hz);
+    const expectedClean = tokens.map(t => t.text).join('');
+
+    // Nếu câu dài (> 8 cụm từ) ➔ Chế độ điền 2-3 từ còn thiếu vào chỗ trống
+    if (tokens.length > 8) {
+      const blankCount = tokens.length >= 12 ? 3 : 2;
+      const chosenIndices = new Set();
+      while (chosenIndices.size < blankCount) {
+        chosenIndices.add(Math.floor(Math.random() * tokens.length));
+      }
+      const templateParts = [];
+      const bankRaw = [];
+      let bIdx = 0;
+
+      tokens.forEach((tok, idx) => {
+        if (chosenIndices.has(idx)) {
+          templateParts.push({ isBlank: true, blankIndex: bIdx, expected: tok });
+          bankRaw.push({ text: tok.text, py: tok.py, isDistractor: false });
+          bIdx++;
+        } else {
+          templateParts.push({ isBlank: false, text: tok.text, py: tok.py });
+        }
+      });
+
+      // Thêm 1-2 từ gây nhiễu từ các thẻ khác trong kho
+      const otherWords = cards
+        .filter(c => c.id !== item.id)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 2)
+        .flatMap(c => segmentChineseWords(c.hz))
+        .filter(w => !bankRaw.some(b => b.text === w.text));
+
+      otherWords.slice(0, 2).forEach(w => {
+        bankRaw.push({ text: w.text, py: w.py, isDistractor: true });
+      });
+
+      const bankTokens = shuffleTokensDiff(bankRaw).map((t, i) => ({ ...t, uid: `tok_${i}` }));
+      return { mode, subType: 'fill', item, templateParts, bankTokens, blankCount, expectedClean };
+    }
+
+    // Câu ngắn/vừa (<= 8 cụm từ) ➔ Sắp xếp toàn bộ câu
+    const bankTokens = shuffleTokensDiff(tokens).map((t, i) => ({ ...t, uid: `tok_${i}` }));
+    return { mode, subType: 'full', item, tokens, bankTokens, expectedClean };
+  }
+
+  // mode === 'arrange_vi'
+  const tokens = segmentVietnameseWords(item.vi);
+  const expectedClean = tokens.map(t => t.text).join(' ').toLowerCase();
+  const bankTokens = shuffleTokensDiff(tokens).map((t, i) => ({ ...t, uid: `tok_${i}` }));
+  return { mode, subType: 'full', item, tokens, bankTokens, expectedClean };
+}
 
 function getQuizPoolBySelectedFoldersAndSRS() {
   const isAll = selectedQuizFolders.has('all') || selectedQuizFolders.size === 0;
@@ -1507,6 +1625,10 @@ function initDailyQuiz() {
 
   quizQuestions = pool.slice(0, totalCount).map(item => {
     const mode = activeModes[Math.floor(Math.random() * activeModes.length)];
+    if (mode === 'arrange_zh' || mode === 'arrange_vi') {
+      return buildArrangeQuestionData(item, mode);
+    }
+
     const wrongs = cards.filter(c => c.id !== item.id).sort(() => 0.5 - Math.random()).slice(0, 3);
 
     if (mode === 'vi_to_zh') {
@@ -1535,6 +1657,7 @@ function renderQuizQuestion() {
     document.getElementById('quizQuestion').textContent = t(`Không có câu hỏi nào trong thư mục đã chọn!`, `所选文件夹中没有题目！`);
     document.getElementById('quizPromptBox').classList.add('hidden');
     quizTypingBox.classList.add('hidden');
+    if (quizArrangeBox) quizArrangeBox.classList.add('hidden');
     document.getElementById('quizOptions').innerHTML = '';
     return;
   }
@@ -1547,6 +1670,7 @@ function renderQuizQuestion() {
     );
     document.getElementById('quizPromptBox').classList.add('hidden');
     quizTypingBox.classList.add('hidden');
+    if (quizArrangeBox) quizArrangeBox.classList.add('hidden');
     document.getElementById('quizOptions').innerHTML = `
       <div class="text-center py-6">
         <p class="text-slate-600 text-sm mb-2">${t(`Bạn đã hoàn thành lượt luyện tập ${totalQ} câu hỏi!`, `您已完成 ${totalQ} 道题目的练习！`)}</p>
@@ -1565,6 +1689,7 @@ function renderQuizQuestion() {
   const optsContainer = document.getElementById('quizOptions');
   optsContainer.innerHTML = '';
   quizTypingBox.classList.add('hidden');
+  if (quizArrangeBox) quizArrangeBox.classList.add('hidden');
   quizListeningReveal.classList.add('hidden');
   quizListenHint.classList.remove('hidden');
 
@@ -1657,7 +1782,236 @@ function renderQuizQuestion() {
       speakChinese(q.item.hz, 0.85);
       quizTypingInput.focus();
     }, 150);
+
+  } else if (q.mode === 'arrange_zh' || q.mode === 'arrange_vi') {
+    quizTextPrompt.classList.remove('hidden');
+    quizAudioPrompt.classList.add('hidden');
+    if (quizArrangeBox) quizArrangeBox.classList.remove('hidden');
+
+    arrangeSelectedUids = [];
+    arrangeFilledSlots = {};
+    arrangeLocked = false;
+    if (btnSubmitArrange) btnSubmitArrange.disabled = false;
+    if (btnArrangeClear) btnArrangeClear.disabled = false;
+
+    if (q.mode === 'arrange_zh') {
+      document.getElementById('quizQuestion').textContent = q.subType === 'fill'
+        ? t("🧩 Điền các từ tiếng Trung còn thiếu vào chỗ trống:", "🧩 选择正确的中文词语填入空白处:")
+        : t("🧩 Sắp xếp các từ tiếng Trung sau thành câu hoàn chỉnh:", "🧩 将下列中文词语排列成完整句子:");
+      document.getElementById('quizTargetHanzi').textContent = q.item.vi;
+      document.getElementById('quizTargetHanzi').className = "text-xl sm:text-2xl font-bold text-[#1D1D1F]";
+      document.getElementById('quizTargetPinyin').textContent = q.subType === 'fill'
+        ? t("Chọn đúng các từ ở khay bên dưới để hoàn thiện câu", "点击下方词语补全句子")
+        : t("Bấm vào từng thẻ từ kèm Pinyin bên dưới để ghép câu", "点击下方带拼音的词语卡片组句");
+      if (quizArrangeHint) {
+        quizArrangeHint.textContent = q.subType === 'fill'
+          ? t("Bấm vào từ bên dưới để điền vào ô trống (bấm vào ô đã điền để bỏ ra).", "点击下方词语填入空位（点击已填词语可取消）。")
+          : t("Bấm vào thẻ từ bên dưới để ghép thành câu (bấm vào từ đã chọn để gỡ ra).", "点击下方词语卡片组句（点击已选词语可移回）。");
+      }
+    } else {
+      document.getElementById('quizQuestion').textContent = t(
+        "🧩 Sắp xếp các từ tiếng Việt sau thành câu nghĩa hoàn chỉnh:",
+        "🧩 将下列越南语词语排列成完整意思:"
+      );
+      document.getElementById('quizTargetHanzi').textContent = q.item.hz;
+      document.getElementById('quizTargetHanzi').className = "text-2xl font-bold text-[#1D1D1F]";
+      document.getElementById('quizTargetPinyin').textContent = q.item.py || '';
+      if (quizArrangeHint) {
+        quizArrangeHint.textContent = t(
+          "Bấm vào từng từ tiếng Việt bên dưới để ghép lại thành câu hoàn chỉnh.",
+          "点击下方越南语词语组成完整句子。"
+        );
+      }
+    }
+
+    renderArrangeInteractiveUI();
   }
+}
+
+/** Tạo HTML cho một thẻ từ (hiển thị Pinyin nếu là tiếng Trung) */
+function createWordTileButton(tok, isChinese, isInAnswer) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = isInAnswer
+    ? "px-3 py-1.5 rounded-xl bg-white border border-[#0071E3]/35 text-[#1D1D1F] shadow-sm hover:border-[#FF3B30]/50 transition text-center apple-btn"
+    : "px-3 py-1.5 rounded-xl bg-white border border-black/[0.08] text-[#1D1D1F] shadow-sm hover:border-[#0071E3]/50 hover:bg-[#0071E3]/5 transition text-center apple-btn";
+
+  if (isChinese) {
+    btn.innerHTML = `
+      <div class="text-sm sm:text-base font-bold leading-tight">${tok.text}</div>
+      <div class="text-[10px] font-medium text-[#0071E3] leading-tight mt-0.5">${tok.py || ''}</div>
+    `;
+  } else {
+    btn.innerHTML = `<span class="text-xs sm:text-sm font-semibold">${tok.text}</span>`;
+  }
+  return btn;
+}
+
+/** Render khu vực đáp án và khay thẻ từ cho chế độ Arrange / Fill */
+function renderArrangeInteractiveUI() {
+  const q = quizQuestions[currentQuizIndex];
+  if (!q || !quizArrangeAnswerZone || !quizArrangeBank) return;
+
+  const isZh = q.mode === 'arrange_zh';
+  quizArrangeAnswerZone.innerHTML = '';
+  quizArrangeBank.innerHTML = '';
+
+  const usedUids = q.subType === 'fill'
+    ? new Set(Object.values(arrangeFilledSlots))
+    : new Set(arrangeSelectedUids);
+
+  if (q.subType === 'fill') {
+    q.templateParts.forEach(part => {
+      if (!part.isBlank) {
+        const span = document.createElement('span');
+        span.className = "px-2 py-1 rounded-xl bg-black/[0.04] text-[#1D1D1F] text-center inline-flex flex-col items-center";
+        span.innerHTML = `
+          <span class="text-sm sm:text-base font-bold leading-tight">${part.text}</span>
+          <span class="text-[10px] text-[#86868B] leading-tight mt-0.5">${part.py || ''}</span>
+        `;
+        quizArrangeAnswerZone.appendChild(span);
+      } else {
+        const filledUid = arrangeFilledSlots[part.blankIndex];
+        if (filledUid) {
+          const tok = q.bankTokens.find(t => t.uid === filledUid);
+          if (tok) {
+            const tile = createWordTileButton(tok, true, true);
+            if (!arrangeLocked) {
+              tile.onclick = () => {
+                delete arrangeFilledSlots[part.blankIndex];
+                renderArrangeInteractiveUI();
+              };
+            }
+            quizArrangeAnswerZone.appendChild(tile);
+            return;
+          }
+        }
+        const slot = document.createElement('span');
+        slot.className = "px-4 py-2 rounded-xl border-2 border-dashed border-[#0071E3]/40 bg-[#0071E3]/5 text-[#0071E3] text-xs font-bold min-w-[56px] text-center";
+        slot.textContent = "___";
+        quizArrangeAnswerZone.appendChild(slot);
+      }
+    });
+  } else {
+    if (arrangeSelectedUids.length === 0) {
+      const placeholder = document.createElement('span');
+      placeholder.className = "text-xs text-[#86868B] italic mx-auto";
+      placeholder.textContent = t("Chạm vào các thẻ từ bên dưới để ghép câu...", "请点击下方词语卡片进行组句...");
+      quizArrangeAnswerZone.appendChild(placeholder);
+    } else {
+      arrangeSelectedUids.forEach((uid, posIdx) => {
+        const tok = q.bankTokens.find(t => t.uid === uid);
+        if (!tok) return;
+        const tile = createWordTileButton(tok, isZh, true);
+        if (!arrangeLocked) {
+          tile.onclick = () => {
+            arrangeSelectedUids.splice(posIdx, 1);
+            renderArrangeInteractiveUI();
+          };
+        }
+        quizArrangeAnswerZone.appendChild(tile);
+      });
+    }
+  }
+
+  q.bankTokens.forEach(tok => {
+    const tile = createWordTileButton(tok, isZh, false);
+    const isUsed = usedUids.has(tok.uid);
+    if (isUsed) {
+      tile.className += " opacity-25 pointer-events-none";
+    } else if (!arrangeLocked) {
+      tile.onclick = () => {
+        if (q.subType === 'fill') {
+          for (let i = 0; i < q.blankCount; i++) {
+            if (!arrangeFilledSlots[i]) {
+              arrangeFilledSlots[i] = tok.uid;
+              break;
+            }
+          }
+        } else {
+          arrangeSelectedUids.push(tok.uid);
+        }
+        renderArrangeInteractiveUI();
+      };
+    }
+    quizArrangeBank.appendChild(tile);
+  });
+}
+
+async function handleArrangeSubmit() {
+  const q = quizQuestions[currentQuizIndex];
+  if (!q || (q.mode !== 'arrange_zh' && q.mode !== 'arrange_vi') || arrangeLocked) return;
+
+  let userBuilt = '';
+  if (q.subType === 'fill') {
+    const filledCount = Object.keys(arrangeFilledSlots).length;
+    if (filledCount < q.blankCount) {
+      alert(t("Vui lòng điền đủ tất cả các chỗ trống trước khi kiểm tra!", "请先填满所有空位后再提交！"));
+      return;
+    }
+    userBuilt = q.templateParts.map(part => {
+      if (!part.isBlank) return part.text;
+      const tok = q.bankTokens.find(t => t.uid === arrangeFilledSlots[part.blankIndex]);
+      return tok ? tok.text : '';
+    }).join('');
+  } else {
+    if (arrangeSelectedUids.length === 0) {
+      alert(t("Vui lòng chọn các từ để ghép câu trước khi kiểm tra!", "请先选择词语组句后再提交！"));
+      return;
+    }
+    const chosenWords = arrangeSelectedUids
+      .map(uid => q.bankTokens.find(t => t.uid === uid)?.text || '')
+      .filter(Boolean);
+    userBuilt = q.mode === 'arrange_zh'
+      ? chosenWords.join('')
+      : chosenWords.join(' ').toLowerCase();
+  }
+
+  const isCorrect = userBuilt === q.expectedClean;
+  arrangeLocked = true;
+  if (btnSubmitArrange) btnSubmitArrange.disabled = true;
+  if (btnArrangeClear) btnArrangeClear.disabled = true;
+  renderArrangeInteractiveUI();
+
+  applySrsReviewResult(q.item, isCorrect ? 'easy' : 'hard');
+  upsertCardToCloud(q.item);
+  speakChinese(q.item.hz, 0.85);
+
+  const fBack = document.getElementById('quizFeedback');
+  fBack.classList.remove('hidden');
+
+  if (isCorrect) {
+    quizScore++;
+    fBack.className = "p-3.5 rounded-xl text-sm font-medium bg-emerald-50 text-emerald-800 border border-emerald-200 space-y-1";
+    fBack.innerHTML = `
+      <div><i class="fa-solid fa-circle-check mr-1"></i> <b>${t('Chính xác!', '回答正确！')}</b> (${formatNextReviewText(q.item)})</div>
+      <div class="text-xs text-emerald-700">${q.item.hz} (${q.item.py || ''}) — ${q.item.vi}</div>
+      <div class="text-xs text-slate-600">${q.item.grammar || ''}</div>
+    `;
+  } else {
+    fBack.className = "p-3.5 rounded-xl text-sm font-medium bg-rose-50 text-rose-800 border border-rose-200 space-y-1";
+    fBack.innerHTML = `
+      <div><i class="fa-solid fa-circle-xmark mr-1"></i> <b>${t('Chưa đúng!', '回答错误！')}</b> ${t('Đã đưa vào danh sách Cần ôn lại (SRS).', '已加入待复习 (SRS) 列表。')}</div>
+      <div class="text-xs text-rose-700"><b>${t('Đáp án đúng:', '正确答案:')}</b> ${q.item.hz} (${q.item.py || ''}) — ${q.item.vi}</div>
+      <div class="text-xs text-slate-600">${q.item.grammar || ''}</div>
+    `;
+  }
+
+  document.getElementById('btnNextQuiz').classList.remove('hidden');
+  document.getElementById('btnNextQuiz').focus();
+}
+
+if (btnArrangeClear) {
+  btnArrangeClear.addEventListener('click', () => {
+    if (arrangeLocked) return;
+    arrangeSelectedUids = [];
+    arrangeFilledSlots = {};
+    renderArrangeInteractiveUI();
+  });
+}
+
+if (btnSubmitArrange) {
+  btnSubmitArrange.addEventListener('click', handleArrangeSubmit);
 }
 
 async function handleChoiceAnswer(isCorrect, selectedBtn, q) {

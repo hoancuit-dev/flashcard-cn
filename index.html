@@ -432,8 +432,8 @@
           </div>
           <div id="quizFolderChips" class="flex flex-wrap gap-1.5"></div>
         </div>
-        <!-- Bộ chọn chế độ kiểm tra -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 bg-[#E8E8ED]/70 p-1.5 rounded-2xl text-xs font-semibold">
+        <!-- Bộ chọn chế độ kiểm tra (6 chế độ + Trộn) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-[#E8E8ED]/70 p-1.5 rounded-2xl text-xs font-semibold">
           <button type="button" data-quiz-mode="zh_to_vi"
             class="quiz-mode-btn py-2 px-2 rounded-xl bg-white text-[#0071E3] shadow-sm transition text-center">
             🇨🇳 ➔ 🇻🇳<br><span id="i18nQModeZhVi" class="text-[11px] font-medium">Trung ➔ Việt • 中译越</span>
@@ -450,9 +450,17 @@
             class="quiz-mode-btn py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center">
             ✍️ Nghe dịch<br><span id="i18nQModeListenType" class="text-[11px] font-medium">Nghe ➔ Gõ • 听音输入</span>
           </button>
+          <button type="button" data-quiz-mode="arrange_zh"
+            class="quiz-mode-btn py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center">
+            🧩 Ghép Trung<br><span id="i18nQModeArrangeZh" class="text-[11px] font-medium">Việt ➔ Xếp Trung • 连词(中)</span>
+          </button>
+          <button type="button" data-quiz-mode="arrange_vi"
+            class="quiz-mode-btn py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center">
+            🧩 Ghép Việt<br><span id="i18nQModeArrangeVi" class="text-[11px] font-medium">Trung ➔ Xếp Việt • 连词(越)</span>
+          </button>
           <button type="button" data-quiz-mode="mixed"
-            class="quiz-mode-btn col-span-2 sm:col-span-1 py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center">
-            🎲 Trộn<br><span id="i18nQModeMixed" class="text-[11px] font-medium">Ngẫu nhiên • 随机</span>
+            class="quiz-mode-btn col-span-2 py-2 px-2 rounded-xl text-[#86868B] hover:bg-white/60 transition text-center">
+            🎲 Trộn tất cả<br><span id="i18nQModeMixed" class="text-[11px] font-medium">Ngẫu nhiên • 随机</span>
           </button>
         </div>
         <p id="quizQuestion" class="text-base sm:text-lg font-semibold text-[#1D1D1F]">
@@ -505,6 +513,30 @@
             <i class="fa-solid fa-wand-magic-sparkles text-[#FF9500] mr-1"></i><span id="i18nTypingSynonymHint">Hệ thống tự động chấp nhận các từ đồng nghĩa và cách diễn đạt tương đương • 系统支持同义词与相近表达评判。</span>
           </p>
         </div>
+
+        <!-- Khung Ghép từ / Điền từ (Dùng cho chế độ Sắp xếp câu Trung & Sắp xếp câu Việt) -->
+        <div id="quizArrangeBox" class="hidden space-y-3 pt-1">
+          <div id="quizArrangeHint" class="text-xs text-[#86868B] font-medium">
+            Bấm vào các thẻ từ bên dưới để sắp xếp thành câu hoàn chỉnh (bấm vào từ đã chọn để bỏ ra).
+          </div>
+          <div id="quizArrangeAnswerZone"
+            class="min-h-[72px] p-3.5 rounded-2xl bg-[#F5F5F7] border-2 border-dashed border-black/[0.12] flex flex-wrap items-center gap-2">
+          </div>
+          <div id="quizArrangeBank"
+            class="p-3 rounded-2xl bg-black/[0.02] border border-black/[0.06] flex flex-wrap justify-center gap-2">
+          </div>
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <button type="button" id="btnArrangeClear"
+              class="px-4 py-2.5 rounded-2xl bg-black/[0.05] hover:bg-black/[0.09] text-[#1D1D1F] font-semibold text-xs sm:text-sm apple-btn">
+              <i class="fa-solid fa-rotate-left mr-1"></i> <span id="i18nBtnArrangeClear">Làm lại • 重置</span>
+            </button>
+            <button type="button" id="btnSubmitArrange"
+              class="px-5 py-2.5 bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold rounded-2xl text-sm shadow-sm apple-btn flex items-center gap-1.5">
+              <i class="fa-solid fa-check"></i> <span id="i18nBtnSubmitArrange">Kiểm tra • 提交</span>
+            </button>
+          </div>
+        </div>
+
         <div id="quizFeedback" class="hidden p-4 rounded-2xl text-sm font-medium"></div>
         <div class="flex justify-end pt-2">
           <button id="btnNextQuiz"

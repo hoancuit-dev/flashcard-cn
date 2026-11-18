@@ -185,6 +185,12 @@ function applyLanguageUI(newLang) {
     setElText('i18nShadowingContentLabel', 'Đoạn văn bản tiếng Trung:', '中文段落文本:');
     setElText('i18nBtnSubmitImportShadowing', 'Phân tích & Tách câu bằng AI', 'AI解析并生成跟读句子');
 
+    // 7. Chế độ kiểm tra sắp xếp câu / điền từ
+    setElText('i18nQModeArrangeZh', 'Việt ➔ Xếp Trung', '越➔中组句');
+    setElText('i18nQModeArrangeVi', 'Trung ➔ Xếp Việt', '中➔越组句');
+    setElText('i18nBtnArrangeClear', 'Làm lại', '重置');
+    setElText('i18nBtnSubmitArrange', 'Kiểm tra', '提交');
+
     // Cập nhật các thành phần động nếu ứng dụng đã tải
     if (typeof refreshAllFolderSelectors === 'function') refreshAllFolderSelectors();
     if (typeof updateStatsSummary === 'function') updateStatsSummary();
